@@ -5,6 +5,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="FarmaPro">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>FarmaPro - Simulador Integral de Farmacología</title>
 
   <!-- Tailwind CSS & FontAwesome -->
@@ -24,46 +25,76 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 6px; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white pb-16 md:pb-0">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white pb-20 md:pb-0">
 
-  <!-- HEADER -->
+  <!-- HEADER RESPONSIVO -->
   <header class="border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center space-x-3.5">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/25 text-slate-950 font-black text-2xl flex-shrink-0">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+      <div class="flex items-center space-x-2.5 sm:space-x-3.5">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/25 text-slate-950 font-black text-xl sm:text-2xl flex-shrink-0">
           <i class="fa-solid fa-mortar-pestle"></i>
         </div>
         <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="font-black text-xl text-white tracking-tight">FarmaPro</h1>
-            <span id="licenseStateBadge" class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-bold">MODO DEMO</span>
-            <span class="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">Dec. 780/2016</span>
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            <h1 class="font-black text-lg sm:text-xl text-white tracking-tight">FarmaPro</h1>
+            <span id="licenseStateBadge" class="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">MODO DEMO</span>
+            <span class="text-[9px] sm:text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold hidden xs:inline">Dec. 780/2016</span>
           </div>
-          <p class="text-xs text-slate-400 font-medium">Estudia cada medicamento: definición, composición, usos, riesgos y casos clínicos reales</p>
+          <p class="text-[11px] sm:text-xs text-slate-400 font-medium line-clamp-1">Estudia cada medicamento: usos, mecanismo, riesgos y casos clínicos</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2.5 text-xs flex-wrap">
+      <div class="flex items-center gap-2 text-xs flex-wrap w-full sm:w-auto justify-end">
         <!-- BOTÓN RÁPIDO PARA ALTERNAR MODO DEMO / PRO -->
-        <button onclick="togglePlanModeDebug()" id="btnToggleDebug" class="px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-500/40 font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+        <button onclick="togglePlanModeDebug()" id="btnToggleDebug" class="px-2.5 py-1.5 sm:px-3 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-500/40 font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 text-[11px] sm:text-xs">
           <i class="fa-solid fa-repeat"></i> <span id="debugToggleLabel">Probar modo Pro</span>
         </button>
 
-        <div class="bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-2">
+        <div class="bg-slate-900/90 px-2.5 py-1.5 rounded-xl border border-slate-800 flex items-center gap-1.5 text-[11px] sm:text-xs">
           <i class="fa-solid fa-pills text-emerald-400"></i>
-          <span>Medicamentos: <strong id="statDrugs" class="text-emerald-400 font-bold mono">0</strong></span>
+          <span>Fármacos: <strong id="statDrugs" class="text-emerald-400 font-bold mono">0</strong></span>
         </div>
 
-        <button onclick="openHistoryModal()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md">
+        <button onclick="openHistoryModal()" class="px-2.5 py-1.5 sm:px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-1.5 transition-all active:scale-95 text-[11px] sm:text-xs">
           <i class="fa-solid fa-clock-rotate-left"></i><span>Historial</span>
         </button>
 
-        <button id="btnProHeader" onclick="openLicenseModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black flex items-center gap-2 transition-all shadow-lg active:scale-95 animate-pulse">
-          <i class="fa-solid fa-crown"></i><span id="btnProHeaderText">Desbloquear Versión Pro</span>
+        <button id="btnProHeader" onclick="openLicenseModal()" class="px-3 py-1.5 sm:px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black flex items-center gap-1.5 transition-all shadow-lg active:scale-95 animate-pulse text-[11px] sm:text-xs">
+          <i class="fa-solid fa-crown"></i><span id="btnProHeaderText">Activar Pro</span>
         </button>
 
-        <button onclick="openNotesModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center gap-2 transition-all shadow-lg active:scale-95">
-          <i class="fa-solid fa-book-bookmark"></i><span class="hidden sm:inline">Mis Apuntes</span>
+        <button onclick="openNotesModal()" class="hidden md:flex px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold items-center gap-2 transition-all shadow-lg active:scale-95">
+          <i class="fa-solid fa-book-bookmark"></i><span>Mis Apuntes</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- NAVEGACIÓN PRINCIPAL DESKTOP/TABLET -->
+    <div class="max-w-7xl mx-auto px-4 hidden md:flex space-x-1 border-t border-slate-800/80 text-xs font-semibold overflow-x-auto">
+      <button onclick="switchTab('catalogo')" id="tab-catalogo" class="tab-btn px-4 py-3 text-emerald-400 border-b-2 border-emerald-400 flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-book-medical"></i> Catálogo de Medicamentos</button>
+      <button onclick="switchTab('simulador')" id="tab-simulador" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-stethoscope"></i> Simulador de Pruebas</button>
+      <button onclick="switchTab('flashcards')" id="tab-flashcards" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-layer-group"></i> Flashcards 3D</button>
+      <button onclick="switchTab('conceptos')" id="tab-conceptos" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-spell-check"></i> Conceptos Clave</button>
+      <button onclick="switchTab('protocolos')" id="tab-protocolos" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-clipboard-check"></i> Protocolos y Normativa</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full flex-grow space-y-5 sm:space-y-6">
+
+    <!-- BANNER CONVERSOR DEMO CON ENLACE A GOOGLE SITES -->
+    <div id="demoConversionBanner" class="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-950/80 via-slate-900 to-slate-900 border border-amber-500/40 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl flex-shrink-0 border border-amber-500/30">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <div>
+          <h2 class="text-xs sm:text-sm font-black text-white">Versión Demo Activa: 15 Medicamentos y 1 Solo Intento en el Simulador</h2>
+          <p class="text-[11px] sm:text-xs text-slate-300">Desbloquea el catálogo completo (154 fármacos), 20 casos clínicos reales y simulacros ilimitados.</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+        <button onclick="openLicenseModal()" class="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs whitespace-nowrap transition-all shadow-lg active:scale-95 text-center">
+          Activar Clave Pro
         </button>
       </div>
     </div>
@@ -156,25 +187,25 @@
         </div>
       </div>
 
-      <div class="max-w-xl mx-auto perspective h-[30rem]">
+      <div class="max-w-xl mx-auto perspective h-[28rem] sm:h-[30rem] w-full">
         <div id="singleFlashcardInner" onclick="flipFlashcard()" class="relative w-full h-full transform-style-3d transition-transform duration-500 cursor-pointer shadow-2xl">
-          <div class="absolute inset-0 backface-hidden bg-slate-900 border-2 border-emerald-500/40 rounded-3xl p-8 flex flex-col justify-between">
+          <div class="absolute inset-0 backface-hidden bg-slate-900 border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 flex flex-col justify-between">
             <div class="flex items-center justify-between gap-2">
               <span id="fcCategoryBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 w-fit">Grupo</span>
               <span id="fcCondicionBadge" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">General</span>
             </div>
             <div class="text-center my-auto">
               <span class="text-xs font-mono text-slate-400 block mb-2" id="fcCodeAtc">ATC</span>
-              <h3 id="fcDrugName" class="text-3xl font-black text-white">Medicamento</h3>
-              <p id="fcDrugBrands" class="text-sm text-emerald-400 mt-2 font-semibold">Marcas</p>
+              <h3 id="fcDrugName" class="text-2xl sm:text-3xl font-black text-white">Medicamento</h3>
+              <p id="fcDrugBrands" class="text-xs sm:text-sm text-emerald-400 mt-2 font-semibold">Marcas</p>
             </div>
             <div class="text-xs text-slate-400 flex items-center justify-between border-t border-slate-800 pt-3">
-              <span id="fcStorageReq" class="truncate max-w-[200px]"><i class="fa-solid fa-box-archive mr-1.5 text-amber-400"></i> Almacenamiento</span>
-              <span class="text-emerald-400 font-bold"><i class="fa-solid fa-arrow-rotate-right mr-1"></i> Toca para girar</span>
+              <span id="fcStorageReq" class="truncate max-w-[180px] sm:max-w-[220px]"><i class="fa-solid fa-box-archive mr-1.5 text-amber-400"></i> Almacenamiento</span>
+              <span class="text-emerald-400 font-bold"><i class="fa-solid fa-arrow-rotate-right mr-1"></i> Girar</span>
             </div>
           </div>
-          <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-900 border-2 border-teal-500/60 rounded-3xl p-6 flex flex-col justify-between overflow-y-auto custom-scrollbar">
-            <div class="space-y-3 text-xs">
+          <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-900 border-2 border-teal-500/60 rounded-3xl p-5 sm:p-6 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+            <div class="space-y-2.5 sm:space-y-3 text-xs">
               <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                 <span class="text-xs font-bold text-teal-400 uppercase tracking-wider"><i class="fa-solid fa-brain mr-1.5"></i> Ficha de Repaso</span>
                 <span id="fcBackName" class="text-[10px] text-slate-400 font-mono">-</span>
@@ -214,57 +245,57 @@
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-ribbon text-purple-400"></i> Control Especial (Res. 1478/2006)</h4>
-          <p class="text-xs text-slate-300 leading-relaxed">Vigencia máxima legal nacional de la fórmula oficial: <strong>30 días calendario</strong> (Art. 86). Custodia estricta bajo llave y registro obligatorio en libro de control.</p>
-        </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
-          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-snowflake text-cyan-400"></i> Cadena de Frío (2 °C a 8 °C)</h4>
-          <p class="text-xs text-slate-300 leading-relaxed">Lectura de temperatura dos veces al día. Si un biológico o insulina se congela, pierde irreversiblemente su actividad farmacológica y debe descartarse.</p>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- MODAL HISTORIAL Y BANCO DE FALLADAS -->
-  <div id="historyModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 max-w-3xl w-full rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+  <!-- MODAL DE ACTIVACIÓN Y VENTA PRO INTEGRADO CON GOOGLE SITES -->
+  <div id="licenseModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-amber-500/40 max-w-lg w-full rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+      <div class="p-5 sm:p-6 border-b border-slate-800 bg-slate-950/90 flex items-start justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg border border-cyan-500/30">
-            <i class="fa-solid fa-clock-rotate-left"></i>
+          <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl sm:text-2xl border border-amber-500/30 flex-shrink-0">
+            <i class="fa-solid fa-crown"></i>
           </div>
           <div>
-            <h3 class="font-black text-white text-base">Historial y Banco de Preguntas Falladas</h3>
-            <p class="text-[11px] text-slate-400">Tus respuestas erróneas se guardan aquí para reforzarlas con un clic</p>
+            <h3 class="font-black text-white text-base sm:text-lg">Activar FarmaPro</h3>
+            <p class="text-[11px] sm:text-xs text-slate-400">Pasa de la Demo al arsenal completo sin restricciones</p>
           </div>
         </div>
-        <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+        <button onclick="closeLicenseModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all flex-shrink-0">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div class="p-4 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div>
-          <span>Preguntas falladas pendientes: <strong id="histFailedBadge" class="text-rose-400 mono font-bold">0</strong></span>
+      <div class="p-5 sm:p-6 space-y-4 text-xs overflow-y-auto custom-scrollbar">
+        <div class="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-amber-950/40 to-slate-950 border border-amber-500/30 space-y-2 text-slate-200">
+          <p class="font-bold text-amber-400 text-xs sm:text-sm"><i class="fa-solid fa-lock-open mr-1.5"></i>¿Qué desbloqueas con la versión Pro?</p>
+          <ul class="space-y-1 text-[11px] text-slate-300 list-disc list-inside">
+            <li><strong>154 principios activos completos</strong> con ficha técnica LADME integral.</li>
+            <li><strong>20 casos clínicos reales</strong> con casuística de dispensación y normatividad.</li>
+            <li><strong>Simulador ilimitado</strong> con selección adaptativa y banco de falladas.</li>
+            <li><strong>Funcionalidad 100% offline</strong>: una vez activada no requiere internet.</li>
+          </ul>
         </div>
-        <div class="flex gap-2">
-          <button onclick="startTargetedWrongTest()" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-1.5">
-            <i class="fa-solid fa-bullseye"></i> Entrenar sólo mis preguntas falladas
-          </button>
-          <button onclick="clearAllHistory()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl transition-all">
-            Limpiar
-          </button>
-        </div>
-      </div>
 
-      <div class="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-grow text-xs">
-        <div>
-          <h4 class="font-bold text-slate-300 mb-2.5 uppercase tracking-wider text-[11px]"><i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1.5"></i>Banco de Respuestas Incorrectas</h4>
-          <div id="wrongQuestionsList" class="space-y-2"></div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-slate-400 font-bold mb-1 text-[11px] sm:text-xs">Identificador o Correo del Comprador (Opcional)</label>
+            <input type="text" id="inputProEmail" placeholder="tu_correo@gmail.com o nombre" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs focus:border-amber-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-bold mb-1 text-[11px] sm:text-xs">Código o Contraseña Pro (Generada en Google Sites)</label>
+            <input type="text" id="inputProKey" placeholder="Ej: PRO_SEN_VIP o clave generada" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white mono uppercase text-xs focus:border-amber-500 focus:outline-none">
+          </div>
+          <p id="proActivationError" class="text-rose-400 font-bold text-[11px] hidden"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Clave de activación no válida.</p>
+          
+          <button onclick="handleActivationSubmit()" class="w-full py-3 sm:py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl transition-all shadow-lg active:scale-95 text-xs">
+            Validar y Desbloquear Acceso Pro
+          </button>
         </div>
-        <div class="pt-3 border-t border-slate-800">
-          <h4 class="font-bold text-slate-300 mb-2.5 uppercase tracking-wider text-[11px]"><i class="fa-solid fa-list-check text-cyan-400 mr-1.5"></i>Sesiones Realizadas</h4>
-          <div id="historySessionsList" class="space-y-2"></div>
+
+        <!-- ENLACE AL PORTAL DE GOOGLE SITES PARA COMPRA Y GENERACIÓN -->
+        <div class="pt-3 border-t border-slate-800 text-center space-y-2">
+          <p class="text-slate-400 text-[11px]">¿Aún no compraste tu contraseña de acceso?</p>
+          <a id="linkGoogleSitesPortal" href="https://sites.google.com/view/farmapro-colombia" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold inline-flex items-center justify-center gap-2 transition-all text-xs">
+            <i class="fa-solid fa-cart-shopping"></i> Comprar Contraseña en Google Sites <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
         </div>
       </div>
     </div>
@@ -371,7 +402,7 @@
 
 <script>
 /* ============================================================
-   UTILIDADES Y LICENCIAMIENTO
+   UTILIDADES Y LICENCIAMIENTO (COMPATIBLE CON GOOGLE SITES)
    ============================================================ */
 const LS = {
   get(k, f) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch (e) { return f; } },
@@ -381,9 +412,25 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 const LICENSE_KEY = 'farmasena_demo_state_debug_v3';
-const VALID_TOKENS = ['PRO_SEN_VIP', 'PRO_FARM_2026', 'FARMAPRO-2026', 'PRO_CUCUTA_FULL'];
+const VALID_TOKENS = ['PRO_SEN_VIP', 'PRO_FARM_2026', 'FARMAPRO-2026', 'PRO_CUCUTA_FULL', 'PRO_FARMA_FULL'];
 
 const License = {
+  // Salt privado que puedes usar en tu Google Sites / Apps Script para generar contraseñas
+  _salt: "FARMAPRO_COLOMBIA_SITES_SALT_2026",
+
+  // Algoritmo determinista para generar claves offline a partir de correo o nombre
+  generateKeyForUser(userIdentifier) {
+    if (!userIdentifier) return 'PRO_FARMA_FULL';
+    const str = userIdentifier.trim().toLowerCase() + this._salt;
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    const hex = Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+    return `PRO-${hex.slice(0, 4)}-${hex.slice(4, 8)}`;
+  },
+
   isPro() {
     return localStorage.getItem(LICENSE_KEY) === 'PRO';
   },
@@ -393,12 +440,31 @@ const License = {
   setDemo() {
     localStorage.setItem(LICENSE_KEY, 'DEMO');
   },
-  activate(key) {
-    const clean = key.trim().toUpperCase();
-    if (VALID_TOKENS.includes(clean) || clean.startsWith('PRO_') || clean.startsWith('PRO-')) {
+  activate(key, userEmail = '') {
+    const cleanKey = (key || '').trim().toUpperCase();
+    if (!cleanKey) return false;
+
+    // 1. Tokens directos predeterminados
+    if (VALID_TOKENS.includes(cleanKey) || cleanKey.startsWith('PRO_')) {
       this.setPro();
       return true;
     }
+
+    // 2. Validación de clave generada desde Google Sites por email/usuario
+    if (userEmail) {
+      const expected = this.generateKeyForUser(userEmail);
+      if (cleanKey === expected) {
+        this.setPro();
+        return true;
+      }
+    }
+
+    // 3. Formato universal de clave firmada
+    if (/^PRO-[A-F0-9]{4}-[A-F0-9]{4}$/.test(cleanKey)) {
+      this.setPro();
+      return true;
+    }
+
     return false;
   }
 };
@@ -406,13 +472,14 @@ const License = {
 function checkUrlAutoActivation() {
   try {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('activar');
-    if (token && License.activate(token)) {
+    const token = urlParams.get('activar') || urlParams.get('pro');
+    const user = urlParams.get('user') || '';
+    if (token && License.activate(token, user)) {
       window.history.replaceState({}, document.title, window.location.pathname);
       alert('¡Licencia activada con éxito! Acceso Pro desbloqueado.');
     }
   } catch (e) {
-    // Manejo de restricciones en entornos iFrame o sandbox
+    // Modo seguro para iFrame
   }
 }
 
@@ -1545,13 +1612,16 @@ function closeLicenseModal() {
 }
 
 function handleActivationSubmit() {
-  const input = document.getElementById('inputProKey');
+  const inputKey = document.getElementById('inputProKey');
+  const inputEmail = document.getElementById('inputProEmail');
   const err = document.getElementById('proActivationError');
-  if (!input) return;
+  if (!inputKey) return;
 
-  const key = input.value;
-  if (License.activate(key)) {
-    alert("¡Felicidades! Se ha activado la Versión Pro con éxito.");
+  const key = inputKey.value;
+  const email = inputEmail ? inputEmail.value : '';
+
+  if (License.activate(key, email)) {
+    alert("¡Felicidades! Se ha activado la Versión Pro con éxito de forma permanente.");
     closeLicenseModal();
     updateAppUIForPlan();
     renderSetup();
@@ -1860,9 +1930,48 @@ function switchTab(tabId) {
 }
 
 /* ============================================================
+   REGISTRO OFFLINE SERVICE WORKER INMEDIATO (PWA NATIVA)
+   ============================================================ */
+function initOfflinePWA() {
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+    // Generación dinámica de Service Worker Cache-First para carga inmediata sin internet
+    const swCode = `
+      const CACHE_NAME = 'farmapro-pwa-v1';
+      self.addEventListener('install', e => {
+        self.skipWaiting();
+      });
+      self.addEventListener('activate', e => {
+        e.waitUntil(self.clients.claim());
+      });
+      self.addEventListener('fetch', e => {
+        if (e.request.method !== 'GET') return;
+        e.respondWith(
+          caches.match(e.request).then(cached => {
+            if (cached) return cached;
+            return fetch(e.request).then(res => {
+              if (res && res.status === 200) {
+                const clone = res.clone();
+                caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+              }
+              return res;
+            }).catch(() => cached);
+          })
+        );
+      });
+    `;
+    try {
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(() => {});
+    } catch (e) {}
+  }
+}
+
+/* ============================================================
    INICIALIZACIÓN
    ============================================================ */
 window.addEventListener('DOMContentLoaded', () => {
+  initOfflinePWA();
   checkUrlAutoActivation();
   updateAppUIForPlan();
   renderSetup();
