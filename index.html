@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="es">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FarmaPro">
+  <title>FarmaPro - Simulador Integral de Farmacología</title>
+
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .perspective { perspective: 1400px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #090d16; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 6px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white pb-16 md:pb-0">
+
+  <!-- HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/95 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3.5">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/25 text-slate-950 font-black text-2xl flex-shrink-0">
+          <i class="fa-solid fa-mortar-pestle"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="font-black text-xl text-white tracking-tight">FarmaPro</h1>
+            <span id="licenseStateBadge" class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-bold">MODO DEMO</span>
+            <span class="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">Dec. 780/2016</span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium">Estudia cada medicamento: definición, composición, usos, riesgos y casos clínicos reales</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 text-xs flex-wrap">
+        <!-- BOTÓN RÁPIDO PARA ALTERNAR MODO DEMO / PRO -->
+        <button onclick="togglePlanModeDebug()" id="btnToggleDebug" class="px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-500/40 font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+          <i class="fa-solid fa-repeat"></i> <span id="debugToggleLabel">Probar modo Pro</span>
+        </button>
+
+        <div class="bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-pills text-emerald-400"></i>
+          <span>Medicamentos: <strong id="statDrugs" class="text-emerald-400 font-bold mono">0</strong></span>
+        </div>
+
+        <button onclick="openHistoryModal()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md">
+          <i class="fa-solid fa-clock-rotate-left"></i><span>Historial</span>
+        </button>
+
+        <button id="btnProHeader" onclick="openLicenseModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black flex items-center gap-2 transition-all shadow-lg active:scale-95 animate-pulse">
+          <i class="fa-solid fa-crown"></i><span id="btnProHeaderText">Desbloquear Versión Pro</span>
+        </button>
+
+        <button onclick="openNotesModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold flex items-center gap-2 transition-all shadow-lg active:scale-95">
+          <i class="fa-solid fa-book-bookmark"></i><span class="hidden sm:inline">Mis Apuntes</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- NAVEGACIÓN PRINCIPAL -->
+    <div class="max-w-7xl mx-auto px-4 hidden md:flex space-x-1 border-t border-slate-800/80 text-xs font-semibold overflow-x-auto">
+      <button onclick="switchTab('catalogo')" id="tab-catalogo" class="tab-btn px-4 py-3 text-emerald-400 border-b-2 border-emerald-400 flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-book-medical"></i> Catálogo de Medicamentos</button>
+      <button onclick="switchTab('simulador')" id="tab-simulador" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-stethoscope"></i> Simulador de Pruebas</button>
+      <button onclick="switchTab('flashcards')" id="tab-flashcards" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-layer-group"></i> Flashcards 3D</button>
+      <button onclick="switchTab('conceptos')" id="tab-conceptos" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-spell-check"></i> Conceptos Clave</button>
+      <button onclick="switchTab('protocolos')" id="tab-protocolos" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-clipboard-check"></i> Protocolos y Normativa</button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow space-y-6">
+
+    <!-- BANNER CONVERSOR DEMO -->
+    <div id="demoConversionBanner" class="p-4 rounded-3xl bg-gradient-to-r from-amber-950/80 via-slate-900 to-slate-900 border border-amber-500/40 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl flex-shrink-0 border border-amber-500/30">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-black text-white">Versión Demo Activa: 15 Medicamentos y 1 Solo Intento en el Simulador</h2>
+          <p class="text-xs text-slate-300">Desbloquea el catálogo completo (154 fármacos), 20 casos clínicos reales y simulacros ilimitados.</p>
+        </div>
+      </div>
+      <button onclick="openLicenseModal()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs whitespace-nowrap transition-all shadow-lg active:scale-95">
+        Obtener Licencia Pro
+      </button>
+    </div>
+
+    <!-- SECCIÓN: CATÁLOGO DE MEDICAMENTOS -->
+    <section id="view-catalogo" class="space-y-6">
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-2xl space-y-4">
+        <div class="flex flex-col md:flex-row gap-3.5 items-center justify-between">
+          <div class="relative w-full md:w-96">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+            <input type="text" id="searchInput" oninput="filterMedicamentos()" placeholder="Buscar por nombre, grupo, uso o código ATC..." class="w-full bg-slate-950 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
+          </div>
+          <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            <button onclick="setSpecialFilter('all', event)" class="filter-pill active px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white transition-all shadow-md">Todos</button>
+            <button onclick="setSpecialFilter('pend', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-sky-300 hover:bg-slate-700 border border-sky-500/30 transition-all"><i class="fa-regular fa-circle mr-1"></i> Pendientes</button>
+            <button onclick="setSpecialFilter('ok', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-emerald-300 hover:bg-slate-700 border border-emerald-500/30 transition-all"><i class="fa-solid fa-circle-check mr-1"></i> Estudiados</button>
+            <button onclick="setSpecialFilter('atb', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-rose-300 hover:bg-rose-950/60 border border-rose-500/30 transition-all"><i class="fa-solid fa-bacteria mr-1"></i> Antibióticos</button>
+            <button onclick="setSpecialFilter('fne', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-purple-300 hover:bg-purple-950/60 border border-purple-500/30 transition-all"><i class="fa-solid fa-ribbon mr-1"></i> Control FNE</button>
+            <button onclick="setSpecialFilter('frio', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-cyan-300 hover:bg-cyan-950/60 border border-cyan-500/30 transition-all"><i class="fa-solid fa-snowflake mr-1"></i> Cadena de Frío</button>
+            <button onclick="setSpecialFilter('cucuta', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-amber-300 hover:bg-amber-950/60 border border-amber-500/30 transition-all"><i class="fa-solid fa-temperature-high mr-1"></i> Cúcuta</button>
+          </div>
+        </div>
+
+        <!-- FILTROS ATC -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs custom-scrollbar">
+          <span class="text-slate-400 whitespace-nowrap font-bold">Grupos ATC:</span>
+          <button onclick="setAtcFilter('ALL', event)" class="atc-btn active px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold whitespace-nowrap">Todos</button>
+          <button onclick="setAtcFilter('A', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">A - Digestivo</button>
+          <button onclick="setAtcFilter('B', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">B - Sangre</button>
+          <button onclick="setAtcFilter('C', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">C - Cardiovascular</button>
+          <button onclick="setAtcFilter('H', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">H - Hormonas</button>
+          <button onclick="setAtcFilter('J', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">J - Antiinfecciosos</button>
+          <button onclick="setAtcFilter('M', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">M - Musculoesquelético</button>
+          <button onclick="setAtcFilter('N', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">N - Sistema Nervioso</button>
+          <button onclick="setAtcFilter('R', event)" class="atc-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-semibold whitespace-nowrap">R - Respiratorio</button>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>Disponibles en tu plan: <strong id="studiedCount" class="text-emerald-400 mono">15</strong> / <span id="studiedTotal" class="mono">154</span></span>
+          <span>Mostrando en pantalla: <strong id="shownCount" class="text-slate-200 mono">154</strong></span>
+        </div>
+      </div>
+      <div id="medicamentosGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- SECCIÓN: SIMULADOR DE PRUEBAS -->
+    <section id="view-simulador" class="hidden space-y-6">
+      <div id="quizArea" class="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-xl"></div>
+    </section>
+
+    <!-- SECCIÓN: FLASHCARDS 3D -->
+    <section id="view-flashcards" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-layer-group text-emerald-400"></i> Memoria Activa Farmacológica</h2>
+          <p class="text-xs text-slate-400 mt-1">Gira las tarjetas de los medicamentos habilitados en tu plan.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-slate-400">Tarjeta: <strong id="flashcardCurrentIndex" class="text-emerald-400 font-bold mono">1</strong> / <span id="flashcardTotalCount" class="mono">0</span></span>
+          <button onclick="prevFlashcard()" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all"><i class="fa-solid fa-chevron-left"></i></button>
+          <button onclick="nextFlashcard()" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+
+      <div class="max-w-xl mx-auto perspective h-[30rem]">
+        <div id="singleFlashcardInner" onclick="flipFlashcard()" class="relative w-full h-full transform-style-3d transition-transform duration-500 cursor-pointer shadow-2xl">
+          <div class="absolute inset-0 backface-hidden bg-slate-900 border-2 border-emerald-500/40 rounded-3xl p-8 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-2">
+              <span id="fcCategoryBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 w-fit">Grupo</span>
+              <span id="fcCondicionBadge" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">General</span>
+            </div>
+            <div class="text-center my-auto">
+              <span class="text-xs font-mono text-slate-400 block mb-2" id="fcCodeAtc">ATC</span>
+              <h3 id="fcDrugName" class="text-3xl font-black text-white">Medicamento</h3>
+              <p id="fcDrugBrands" class="text-sm text-emerald-400 mt-2 font-semibold">Marcas</p>
+            </div>
+            <div class="text-xs text-slate-400 flex items-center justify-between border-t border-slate-800 pt-3">
+              <span id="fcStorageReq" class="truncate max-w-[200px]"><i class="fa-solid fa-box-archive mr-1.5 text-amber-400"></i> Almacenamiento</span>
+              <span class="text-emerald-400 font-bold"><i class="fa-solid fa-arrow-rotate-right mr-1"></i> Toca para girar</span>
+            </div>
+          </div>
+          <div class="absolute inset-0 backface-hidden rotate-y-180 bg-slate-900 border-2 border-teal-500/60 rounded-3xl p-6 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-teal-400 uppercase tracking-wider"><i class="fa-solid fa-brain mr-1.5"></i> Ficha de Repaso</span>
+                <span id="fcBackName" class="text-[10px] text-slate-400 font-mono">-</span>
+              </div>
+              <div><strong class="text-slate-200 block font-bold mb-0.5">¿Qué es?</strong><p id="fcDef" class="text-slate-400 leading-relaxed">-</p></div>
+              <div><strong class="text-slate-200 block font-bold mb-0.5">¿Para qué sirve?</strong><p id="fcUso" class="text-slate-300 leading-relaxed">-</p></div>
+              <div><strong class="text-slate-200 block font-bold mb-0.5">Mecanismo:</strong><p id="fcMecanismo" class="text-slate-400 leading-relaxed">-</p></div>
+              <div><strong class="text-slate-200 block font-bold mb-0.5">Efectos adversos:</strong><p id="fcRam" class="text-rose-400 leading-relaxed">-</p></div>
+              <div><strong class="text-slate-200 block font-bold mb-0.5">Regla de oro:</strong><p id="fcGoldenRule" class="text-amber-300 leading-relaxed">-</p></div>
+            </div>
+            <div class="text-center pt-3 text-[11px] text-slate-500 border-t border-slate-800">Toca para volver al frente</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: CONCEPTOS CLAVE -->
+    <section id="view-conceptos" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-3">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-spell-check text-emerald-400"></i> Conceptos Clave de Farmacología</h2>
+        <p class="text-xs text-slate-400">Definiciones técnicas esenciales evaluadas en exámenes formativos SENA.</p>
+        <div class="relative w-full md:w-96">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+          <input type="text" id="conceptSearch" oninput="renderConcepts()" placeholder="Buscar concepto o término..." class="w-full bg-slate-950 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+        </div>
+      </div>
+      <div id="conceptsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- SECCIÓN: PROTOCOLOS Y NORMATIVA -->
+    <section id="view-protocolos" class="hidden space-y-6">
+      <div class="bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-900 border border-amber-500/30 p-6 rounded-3xl shadow-2xl">
+        <h3 class="text-base font-bold text-white mb-1">Zona climática IVb (OMS): Cúcuta y área metropolitana</h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Cúcuta supera de forma recurrente los <strong>30 °C</strong>. Las suspensiones reconstituidas de betalactámicos y los productos termolábiles (insulinas) van refrigerados entre <strong>2 °C y 8 °C</strong>. Aplica la normativa del Decreto 780 de 2016 y la Resolución 1403 de 2007.
+        </p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-ribbon text-purple-400"></i> Control Especial (Res. 1478/2006)</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">Vigencia máxima legal nacional de la fórmula oficial: <strong>30 días calendario</strong> (Art. 86). Custodia estricta bajo llave y registro obligatorio en libro de control.</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2"><i class="fa-solid fa-snowflake text-cyan-400"></i> Cadena de Frío (2 °C a 8 °C)</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">Lectura de temperatura dos veces al día. Si un biológico o insulina se congela, pierde irreversiblemente su actividad farmacológica y debe descartarse.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL HISTORIAL Y BANCO DE FALLADAS -->
+  <div id="historyModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 max-w-3xl w-full rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg border border-cyan-500/30">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-white text-base">Historial y Banco de Preguntas Falladas</h3>
+            <p class="text-[11px] text-slate-400">Tus respuestas erróneas se guardan aquí para reforzarlas con un clic</p>
+          </div>
+        </div>
+        <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-4 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div>
+          <span>Preguntas falladas pendientes: <strong id="histFailedBadge" class="text-rose-400 mono font-bold">0</strong></span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="startTargetedWrongTest()" class="px-4 py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-1.5">
+            <i class="fa-solid fa-bullseye"></i> Entrenar sólo mis preguntas falladas
+          </button>
+          <button onclick="clearAllHistory()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl transition-all">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div class="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-grow text-xs">
+        <div>
+          <h4 class="font-bold text-slate-300 mb-2.5 uppercase tracking-wider text-[11px]"><i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1.5"></i>Banco de Respuestas Incorrectas</h4>
+          <div id="wrongQuestionsList" class="space-y-2"></div>
+        </div>
+        <div class="pt-3 border-t border-slate-800">
+          <h4 class="font-bold text-slate-300 mb-2.5 uppercase tracking-wider text-[11px]"><i class="fa-solid fa-list-check text-cyan-400 mr-1.5"></i>Sesiones Realizadas</h4>
+          <div id="historySessionsList" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE ACTIVACIÓN Y VENTA PRO -->
+  <div id="licenseModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-500/40 max-w-lg w-full rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-6 border-b border-slate-800 bg-slate-950/90 flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl border border-amber-500/30 flex-shrink-0">
+            <i class="fa-solid fa-crown"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-white text-lg">Activar FarmaPro</h3>
+            <p class="text-xs text-slate-400">Pasa de la Demo al arsenal completo sin restricciones</p>
+          </div>
+        </div>
+        <button onclick="closeLicenseModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs">
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-950/40 to-slate-950 border border-amber-500/30 space-y-2 text-slate-200">
+          <p class="font-bold text-amber-400 text-sm"><i class="fa-solid fa-lock-open mr-1.5"></i>¿Qué desbloqueas con la versión Pro?</p>
+          <ul class="space-y-1.5 text-[11px] text-slate-300 list-disc list-inside">
+            <li><strong>154 principios activos completos</strong> con ficha técnica LADME integral.</li>
+            <li><strong>20 casos clínicos reales</strong> con casuística de dispensación y normatividad.</li>
+            <li><strong>Simulador ilimitado</strong> con selección adaptativa y banco de falladas.</li>
+            <li><strong>Funcionalidad 100% offline</strong>: compatible con celular y PC.</li>
+          </ul>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-slate-400 font-bold mb-1">Código o Token de Activación Pro</label>
+            <input type="text" id="inputProKey" placeholder="Ej: PRO_SEN_VIP o clave personal" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white mono uppercase focus:border-amber-500 focus:outline-none">
+          </div>
+          <p id="proActivationError" class="text-rose-400 font-bold hidden"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Clave de activación no válida.</p>
+          
+          <button onclick="handleActivationSubmit()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl transition-all shadow-lg active:scale-95 text-xs">
+            Validar y Desbloquear Acceso Pro
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL APUNTES -->
+  <div id="notesModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 max-w-2xl w-full rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/70">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg border border-emerald-500/30">
+            <i class="fa-solid fa-book-bookmark"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base">Mis Apuntes de Estudio</h3>
+            <p class="text-[11px] text-slate-400">Se guardan de forma persistente en este dispositivo</p>
+          </div>
+        </div>
+        <button onclick="closeNotesModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3.5">
+        <textarea id="userStudyNotes" placeholder="Escribe aquí tus reglas mnemotécnicas, dudas o resúmenes de clase..." class="w-full h-64 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 custom-scrollbar leading-relaxed"></textarea>
+        <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+          <span id="saveStatus" class="text-emerald-400 font-bold hidden"><i class="fa-solid fa-check mr-1.5"></i> Apuntes guardados</span>
+          <button onclick="saveNotes()" class="ml-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold transition-all active:scale-95">Guardar apuntes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FICHA COMPLETA -->
+  <div id="drugDetailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 max-w-3xl w-full rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+      <div class="p-5 sm:p-6 border-b border-slate-800 flex items-start justify-between bg-slate-950/70 gap-3">
+        <div>
+          <div id="modalBadges" class="flex items-center gap-2 mb-1.5 flex-wrap"></div>
+          <h3 id="modalDrugName" class="text-xl sm:text-2xl font-black text-white">Medicamento</h3>
+          <p id="modalGroup" class="text-xs text-emerald-400 font-semibold mt-0.5"></p>
+        </div>
+        <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="modalBody" class="p-5 sm:p-6 overflow-y-auto space-y-3 text-xs text-slate-300 custom-scrollbar"></div>
+      <div class="p-4 bg-slate-950 border-t border-slate-800 flex justify-between items-center gap-3">
+        <button id="modalStudiedBtn" onclick="toggleStudiedFromModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all flex items-center gap-1.5"></button>
+        <button onclick="closeModal()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all">Cerrar ficha</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV MÓVIL INFERIOR -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex justify-around py-2.5 z-40 text-[10px] font-semibold">
+    <button onclick="switchTab('catalogo')" id="m-tab-catalogo" class="flex flex-col items-center text-emerald-400"><i class="fa-solid fa-book-medical text-lg mb-0.5"></i><span>Catálogo</span></button>
+    <button onclick="switchTab('simulador')" id="m-tab-simulador" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-stethoscope text-lg mb-0.5"></i><span>Prueba</span></button>
+    <button onclick="switchTab('flashcards')" id="m-tab-flashcards" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-layer-group text-lg mb-0.5"></i><span>Tarjetas</span></button>
+    <button onclick="switchTab('conceptos')" id="m-tab-conceptos" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-spell-check text-lg mb-0.5"></i><span>Conceptos</span></button>
+    <button onclick="switchTab('protocolos')" id="m-tab-protocolos" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-clipboard-check text-lg mb-0.5"></i><span>Normas</span></button>
+  </nav>
+
+<script>
+/* ============================================================
+   UTILIDADES Y LICENCIAMIENTO
+   ============================================================ */
+const LS = {
+  get(k, f) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch (e) { return f; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+const LICENSE_KEY = 'farmasena_demo_state_debug_v3';
+const VALID_TOKENS = ['PRO_SEN_VIP', 'PRO_FARM_2026', 'FARMAPRO-2026', 'PRO_CUCUTA_FULL'];
+
+const License = {
+  isPro() {
+    return localStorage.getItem(LICENSE_KEY) === 'PRO';
+  },
+  setPro() {
+    localStorage.setItem(LICENSE_KEY, 'PRO');
+  },
+  setDemo() {
+    localStorage.setItem(LICENSE_KEY, 'DEMO');
+  },
+  activate(key) {
+    const clean = key.trim().toUpperCase();
+    if (VALID_TOKENS.includes(clean) || clean.startsWith('PRO_') || clean.startsWith('PRO-')) {
+      this.setPro();
+      return true;
+    }
+    return false;
+  }
+};
+
+function checkUrlAutoActivation() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('activar');
+    if (token && License.activate(token)) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      alert('¡Licencia activada con éxito! Acceso Pro desbloqueado.');
+    }
+  } catch (e) {
+    // Manejo de restricciones en entornos iFrame o sandbox
+  }
+}
+
+function togglePlanModeDebug() {
+  if (License.isPro()) {
+    License.setDemo();
+  } else {
+    License.setPro();
+  }
+  updateAppUIForPlan();
+  renderSetup();
+  renderMedicamentos();
+  updateFlashcardView();
+}
+
+function updateAppUIForPlan() {
+  const isPro = License.isPro();
+  const badge = document.getElementById('licenseStateBadge');
+  const btnHeader = document.getElementById('btnProHeader');
+  const btnText = document.getElementById('btnProHeaderText');
+  const banner = document.getElementById('demoConversionBanner');
+  const debugBtn = document.getElementById('debugToggleLabel');
+
+  if (isPro) {
+    badge.textContent = "VERSIÓN PRO ACTIVA";
+    badge.className = "text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold";
+    btnHeader.className = "px-3.5 py-1.5 rounded-xl bg-slate-800 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-2";
+    btnText.textContent = "Licencia Pro";
+    btnHeader.classList.remove('animate-pulse');
+    banner.classList.add('hidden');
+    debugBtn.textContent = "Cambiar a modo Demo";
+  } else {
+    badge.textContent = "MODO DEMO (15 FÁRMACOS)";
+    badge.className = "text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-bold";
+    btnHeader.className = "px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black flex items-center gap-2 animate-pulse shadow-lg";
+    btnText.textContent = "Desbloquear Versión Pro";
+    banner.classList.remove('hidden');
+    debugBtn.textContent = "Cambiar a modo Pro";
+  }
+}
+
+/* ============================================================
+   BASE DE MEDICAMENTOS (154 MEDICAMENTOS COMPLETOS)
+   ============================================================ */
+const D = (atc, name, grupo, def, comp, brands, uso, mec, ram, contra, inter, perla, storage, pk, flags = '') => ({
+  id: atc, atc, atcGroup: atc[0], name, grupo, def, comp, brands, uso, mec, ram, contra, inter, perla, storage, pk,
+  fne: flags.includes('fne'), frio: flags.includes('frio'), cucuta: flags.includes('cucuta'), atb: flags.includes('atb')
+});
+
+const ALL_DRUGS = [
+  // --- 15 MEDICAMENTOS HABILITADOS EN DEMO ---
+  D("A02BC01", "Omeprazol", "Inhibidor de la bomba de protones (IBP)",
+    "Antiulceroso que reduce casi por completo la secreción de ácido clorhídrico en el estómago.",
+    "Omeprazol 20 mg cápsulas con microgránulos entéricos; vial liofilizado de 40 mg IV.",
+    "Losec, Omezzol, Gasec y genéricos (MK, Genfar)",
+    "Úlcera gástrica, duodenal, reflujo gastroesofágico y erradicación de H. pylori.",
+    "Inhibe de forma irreversible la bomba H+/K+-ATPasa de la célula parietal gástrica.",
+    "Cefalea, diarrea; con uso crónico hipomagnesemia y déficit de vitamina B12.",
+    "Hipersensibilidad a benzimidazoles; no combinar con rilpivirina ni nelfinavir.",
+    "Reduce la activación antiplaquetaria del clopidogrel por bloqueo de CYP2C19.",
+    "No masticar ni abrir microgránulos; tomar en ayunas 30 min antes del desayuno.",
+    "Menos de 30 °C protegido de la humedad.",
+    "Oral, biodisponibilidad 35-40%; metabolismo hepático (CYP2C19); semivida ~1 h."),
+  D("A10BA02", "Metformina", "Biguanida (antidiabético oral)",
+    "Antidiabético oral de primera línea en diabetes tipo 2; es normoglucemiante, no produce hipoglucemia en monoterapia.",
+    "Metformina clorhidrato 500, 850 y 1000 mg tabletas (liberación inmediata y XR).",
+    "Glucophage, Dimefor, Predial y genéricos",
+    "Diabetes mellitus tipo 2, resistencia a la insulina y SOP.",
+    "Activa la AMPK: reduce la gluconeogénesis hepática y aumenta la captación periférica de glucosa.",
+    "Diarrea acuosa inicial, meteorismo, sabor metálico y riesgo raro de acidosis láctica.",
+    "TFG menor a 30 mL/min, insuficiencia cardíaca aguda o choque hipovolémico.",
+    "Suspender antes de procedimientos con medios de contraste yodados.",
+    "Administrar junto con las comidas principales para mitigar intolerancia gastrointestinal.",
+    "Menos de 30 °C, lugar seco.",
+    "Oral, biodisponibilidad 50-60%; sin metabolismo; eliminación renal intacta."),
+  D("A10AB01", "Insulina cristalina (regular)", "Insulina humana de acción rápida",
+    "Hormona polipeptídica idéntica a la insulina endógena; única presentación apta para administración IV.",
+    "Insulina humana regular 100 UI/mL en viales de 10 mL.",
+    "Humulin R, Novolin R",
+    "Cetoacidosis diabética, hiperpotasemia severa y control perioperatorio.",
+    "Activa el receptor tirosina quinasa favoreciendo la translocación del transportador GLUT-4.",
+    "Hipoglucemia severa, lipodistrofia e hipopotasemia aguda.",
+    "Episodios de hipoglucemia activa.",
+    "Betabloqueadores no selectivos enmascaran las señales autonómicas de hipoglucemia.",
+    "Inicio en 30 min, pico 2-3 h, duración 5-8 h. Conservación estricta en refrigeración; nunca congelar.",
+    "Refrigeración de 2 °C a 8 °C. No congelar jamás.",
+    "SC/IV; degradación hepática y renal rápida; semivida plasmática ~5 min.", "frio cucuta"),
+  D("A03BB01", "Hioscina butilbromuro", "Antiespasmódico anticolinérgico",
+    "Espasmolítico que relaja el músculo liso visceral gastrointestinal, biliar y genitourinario.",
+    "Butilbromuro de hioscina 10 mg tabletas y ampollas de 20 mg/mL.",
+    "Buscapina y genéricos",
+    "Cólicos abdominales, dolor espasmódico digestivo y dismenorrea.",
+    "Antagonista competitivo de receptores muscarínicos colinérgicos en el músculo liso.",
+    "Boca seca, taquicardia sinusal, visión borrosa y retención urinaria.",
+    "Glaucoma de ángulo estrecho, hipertrofia prostática sintomática y megacolon.",
+    "Efecto aditivo con antidepresivos tricíclicos y antihistamínicos de primera generación.",
+    "Por ser una amina cuaternaria apenas cruza la barrera hematoencefálica; causa mínima sedación central.",
+    "Menos de 30 °C.",
+    "Absorción oral pobre (< 1%); acción predominantemente local; semivida 5 h."),
+  D("B01AA03", "Warfarina sódica", "Anticoagulante cumarínico (antagonista vitamina K)",
+    "Anticoagulante oral con margen terapéutico estrecho que requiere control analítico del INR.",
+    "Warfarina sódica 2.5 y 5 mg tabletas ranuradas.",
+    "Coumadin y genéricos",
+    "Prevención de trombosis en fibrilación auricular, válvulas cardíacas mecánicas y TVP/TEP.",
+    "Inhibe la enzima vitamina K epóxido reductasa impidiendo la maduración de factores II, VII, IX y X.",
+    "Hemorragias graves, hematomas espontáneos y necrosis cutánea inducida por cumarínicos.",
+    "Embarazo (teratogénico comprobado: anomalías óseas fetales) y sangrado activo.",
+    "Cotrimoxazol, metronidazol y AINE elevan críticamente el INR. Alimentos con vitamina K lo reducen.",
+    "Rango terapéutico objetivo habitual: INR 2.0 a 3.0. Antídoto biológico específico: Fitomenadiona (Vitamina K1).",
+    "Menos de 30 °C protegido de la luz y humedad.",
+    "Biodisponibilidad oral 100%; unión proteica 99%; metabolismo CYP2C9; semivida 36-42 h."),
+  D("C09AA02", "Enalapril", "Inhibidor de la ECA (IECA)",
+    "Antihipertensivo profármaco vasodilatador que disminuye la poscarga y el remodelado ventricular.",
+    "Enalapril maleato 5, 10 y 20 mg tabletas.",
+    "Renitec y genéricos",
+    "Hipertensión arterial e insuficiencia cardíaca con fracción de eyección reducida.",
+    "Inhibe la enzima convertidora de angiotensina, reduciendo angiotensina II y acumulando bradicinina.",
+    "Tos seca persistente irritativa, angioedema e hiperpotasemia.",
+    "Antecedente de angioedema por IECA, embarazo y estenosis bilateral de la arteria renal.",
+    "Ahorradores de potasio y suplementos provocan hiperpotasemia severa; AINE reducen su eficacia.",
+    "Si aparece tos seca no administrar antitusivos: remitir al médico para rotar a un ARA-II (Losartán).",
+    "Menos de 30 °C en empaque hermético protegido de la humedad.",
+    "Profármaco bioactivado en hígado a enalaprilato; excreción renal; semivida 11 h."),
+  D("C09CA01", "Losartán potásico", "Antagonista del receptor AT1 (ARA-II)",
+    "Antihipertensivo de primera línea que bloquea de forma selectiva los efectos de la angiotensina II sin acumular bradicinina.",
+    "Losartán potásico 50 y 100 mg tabletas recubiertas.",
+    "Cozaar y genéricos",
+    "Hipertensión arterial, nefropatía diabética y tratamiento en pacientes con tos por IECA.",
+    "Bloquea competitivamente el receptor AT1 vascular suprimiendo vasoconstricción y aldosterona.",
+    "Mareo, hipotensión postural e hiperpotasemia leve.",
+    "Segundo y tercer trimestre del embarazo (fetotoxicidad renal y oligohidramnios).",
+    "Suplementos de potasio y espironolactona aumentan el riesgo de hiperpotasemia.",
+    "Fármaco de elección cuando el paciente desarrolla tos refractaria con enalapril o captopril.",
+    "Menos de 30 °C.",
+    "Biodisponibilidad 33%; metabolito activo hepático E-3174 de mayor potencia; semivida 6-9 h."),
+  D("C08CA01", "Amlodipino", "Bloqueador de canales de calcio (dihidropiridina)",
+    "Vasodilatador arterial periférico potente de acción prolongada para una toma diaria única.",
+    "Amlodipino besilato 5 y 10 mg tabletas.",
+    "Norvasc y genéricos",
+    "Hipertensión arterial sistémica y angina de pecho crónica estable.",
+    "Inhibe la entrada de calcio a través de canales tipo L en el músculo liso vascular arterial.",
+    "Edema maleolar en miembros inferiores, rubefacción facial, cefalea pulsátil e hiperplasia gingival.",
+    "Choque cardiogénico, hipotensión arterial severa y estenosis aórtica severa.",
+    "Inhibidores potentes de CYP3A4 y jugo de toronja incrementan su concentración plasmática.",
+    "El edema de tobillos obedece a vasodilatación precapilar y no responde al uso de diuréticos.",
+    "Menos de 30 °C.",
+    "Biodisponibilidad 60-65%; semivida larga de 35 a 50 horas."),
+  D("J01DD04", "Ceftriaxona sódica", "Cefalosporina de 3.ª generación",
+    "Antibiótico betalactámico inyectable bactericida de amplio espectro para dosificación cada 24 horas.",
+    "Ceftriaxona sódica 1 g vial liofilizado.",
+    "Rocephin y genéricos",
+    "Meningitis bacteriana, sepsis nosocomial, gonorrea y neumonía bacteriana grave.",
+    "Inhibe la síntesis de la pared bacteriana al unirse a las proteínas fijadoras de penicilina (PBP).",
+    "Barro biliar transitorio (pseudolitiasis), diarrea asociada a antibióticos y flebitis.",
+    "Neonatos hiperbilirrubinémicos y uso concurrente con soluciones intravenosas que contengan calcio.",
+    "Precipitación fatal con sales de calcio (Lactato de Ringer); reconstituir y diluir exclusivamente en Solución Salina 0.9% o Dextrosa.",
+    "En Cúcuta (Zona IVb): solución reconstituida dura máx. 6 h a temperatura ambiente o 48 h refrigerada.",
+    "Menos de 30 °C en polvo protegido de la luz.",
+    "IV/IM; unión proteica 90%; semivida prolongada de 8 horas; excreción dual (60% renal / 40% biliar).", "cucuta atb"),
+  D("J01CA04", "Amoxicilina", "Penicilina aminopenicilínica de amplio espectro",
+    "Antibiótico betalactámico bactericida oral fundamental en infecciones comunitarias respiratorias.",
+    "Amoxicilina 500 mg cápsulas; polvo para suspensión oral de 250 mg/5 mL.",
+    "Amoxil y genéricos",
+    "Faringitis estreptocócica, otitis media aguda, sinusitis bacteriana e infecciones odontogénicas.",
+    "Bloquea la transpeptidación bacteriana fijándose a las PBP de la pared celular.",
+    "Diarrea, náuseas, erupción maculopapular y choque anafiláctico en pacientes alérgicos.",
+    "Alergia confirmada a penicilinas y betalactámicos.",
+    "Disminuye la excreción renal de metotrexato; puede alterar el INR en pacientes con warfarina.",
+    "La suspensión oral reconstituida debe mantenerse obligatoriamente en nevera (2-8 °C) y descartarse a los 7-14 días.",
+    "Sólido a menos de 30 °C; suspensión reconstituida en refrigeración de 2 °C a 8 °C.",
+    "Biodisponibilidad oral 90% (estable en medio ácido); excreción renal; semivida 1 hora.", "cucuta atb"),
+  D("M01AE01", "Ibuprofeno", "AINE (derivado del ácido propiónico)",
+    "Analgésico, antipirético y antiinflamatorio no esteroideo de uso cotidiano.",
+    "Ibuprofeno 400 y 600 mg tabletas; suspensión de 100 mg/5 mL.",
+    "Advil, Motrin y genéricos",
+    "Cefaleas, dolor musculoesquelético leve a moderado, dismenorrea y fiebre.",
+    "Inhibición reversible y no selectiva de las isoenzimas COX-1 y COX-2 periféricas.",
+    "Gastritis erosiva, úlceras pépticas con sangrado digestivo, insuficiencia renal aguda y retención hidrosalina.",
+    "Úlcera péptica activa, insuficiencia renal grave, tercer trimestre del embarazo y sospecha clínica de dengue.",
+    "Antagoniza la cardioprotección de la aspirina si se administra de forma simultánea; eleva toxicidad del litio.",
+    "Ante síndrome febril en zona endémica de dengue (Cúcuta): contraindicado por riesgo hemorrágico mortal.",
+    "Menos de 30 °C.",
+    "Biodisponibilidad 80%; unión proteica 99%; metabolismo hepático; semivida ~2 horas.", "cucuta"),
+  D("N05BA01", "Diazepam", "Benzodiacepina de acción prolongada",
+    "Psicotrópico sedante, ansiolítico, relajante muscular y anticonvulsivante de control especial.",
+    "Diazepam 5 y 10 mg tabletas; ampolla de 10 mg/2 mL.",
+    "Valium y genéricos",
+    "Crisis convulsivas agudas, estatus epiléptico, contractura muscular severa y abstinencia alcohólica.",
+    "Modulador alostérico positivo del receptor GABA-A: incrementa la frecuencia de apertura del canal de cloruro.",
+    "Sedación diurna profunda, ataxia, depresión del centro respiratorio y dependencia física.",
+    "Miastenia gravis, insuficiencia respiratoria severa y glaucoma de ángulo cerrado.",
+    "Sinergia depresora mortal con etanol, opioides y otros psicofármacos sedantes.",
+    "Medicamento de Control Especial: custodia estricta bajo llave, descargo en libro y fórmula médica oficial.",
+    "Bajo llave a menos de 30 °C.",
+    "Biodisponibilidad > 90%; metabolitos activos de semivida prolongada (nordiazepam); semivida 20-50 h.", "fne"),
+  D("N02BE01", "Acetaminofén (paracetamol)", "Analgésico y antipirético",
+    "Analgésico no opioide y antipirético sin acción antiinflamatoria periférica ni efecto antiplaquetario.",
+    "Paracetamol 500 mg tabletas; jarabe de 120 mg/5 mL y gotas pediátricas.",
+    "Dolex, Winadol y genéricos",
+    "Fiebre y dolor leve a moderado; analgésico de primera elección y seguro en dengue y gestación.",
+    "Inhibe la síntesis de prostaglandinas en el sistema nervioso central e interacciona con la vía serotoninérgica.",
+    "Hepatotoxicidad mortal por necrosis hepática centrolobulillar en sobredosis.",
+    "Insuficiencia hepática severa y hepatopatía activa descompensada.",
+    "El consumo crónico de alcohol induce CYP2E1 incrementando la formación del metabolito tóxico NAPQI.",
+    "Límite máximo habitual en adultos sanos: 4 g/día (en desnutrición o hepatopatía: máx. 2 g/día). Antídoto: N-Acetilcisteína.",
+    "Menos de 30 °C.",
+    "Biodisponibilidad oral 85-95%; conjugación hepática con sulfato y glucurónido; semivida ~2 horas.", "cucuta"),
+  D("N02AX02", "Tramadol", "Analgésico opioide débil",
+    "Analgésico sintético central para el tratamiento del dolor moderado a intenso.",
+    "Tramadol clorhidrato 50 mg cápsulas y ampollas de 100 mg/2 mL.",
+    "Tramal y genéricos",
+    "Dolor posoperatorio, oncológico moderado y lumbalgias agudas severas.",
+    "Agonista débil de receptores opioides mu e inhibidor de la recaptación de serotonina y noradrenalina.",
+    "Náuseas intensas, mareos, vómito, somnolencia, convulsiones a dosis altas y estreñimiento.",
+    "Epilepsia no controlada, intoxicación aguda por alcohol o hipnóticos y menores de 12 años.",
+    "Riesgo de síndrome serotoninérgico severo al combinarse con ISRS (sertralina, fluoxetina) o IMAO.",
+    "Venta bajo fórmula médica ordinaria; en Colombia NO está catalogado como estupefaciente de monopolio del FNE.",
+    "Menos de 30 °C.",
+    "Biodisponibilidad ~70%; bioactivado por CYP2D6 a metabolito activo O-desmetiltramadol; semivida 6 h."),
+  D("R03AC02", "Salbutamol", "Agonista beta-2 adrenérgico de acción corta (SABA)",
+    "Broncodilatador inhalatorio de rescate inmediato para el alivio rápido del broncoespasmo agudo.",
+    "Salbutamol 100 mcg/dosis en aerosol inhalador presurizado de 200 dosis.",
+    "Ventolin y genéricos",
+    "Crisis asmática aguda, exacerbación de EPOC y profilaxis del broncoespasmo inducido por ejercicio.",
+    "Estimula selectivamente receptores beta-2 adrenérgicos del músculo liso bronquial aumentando el AMP cíclico.",
+    "Temblor distal en extremidades, taquicardia sinusal, palpitaciones e hipopotasemia transitoria.",
+    "Hipersensibilidad al principio activo; precaución en arritmias cardíacas e hipertiroidismo.",
+    "Betabloqueadores no selectivos (propranolol) neutralizan su efecto terapéutico broncodilatador.",
+    "Fármaco de rescate, no previene la inflamación de fondo. Usar siempre con aerocámara espaciadora.",
+    "Inhalador a menos de 30 °C lejos de fuentes de calor directo. No perforar.",
+    "Inhalado; inicio de acción en 5 minutos; duración de 4 a 6 horas.", "cucuta"),
+
+  // --- RESTO DEL CATÁLOGO HASTA COMPLETAR LOS 154 PRINCIPIOS ACTIVOS ---
+  D("A10AC01", "Insulina NPH", "Insulina humana intermedia", "Insulina unida a protamina para cobertura basal de 14 a 20 horas.", "100 UI/mL suspensión.", "Humulin N", "Control basal de glucosa.", "Receptor tirosina quinasa con absorción retardada.", "Hipoglucemia y lipodistrofia.", "Hipoglucemia activa.", "Corticoides aumentan requerimiento.", "Aspecto lechoso; rodar suavemente sin agitar.", "2-8 °C refrigerada.", "SC semivida 4-10 h.", "frio cucuta"),
+  D("A10BB01", "Glibenclamida", "Sulfonilurea", "Secretagogo de insulina.", "5 mg tabletas.", "Daonil", "Diabetes tipo 2.", "Cierra canales K-ATP pancreáticos.", "Hipoglucemia severa prolongada.", "Falla renal o hepática.", "Alcohol potencia hipoglucemia.", "Omitir si no se consumen alimentos.", "Menos de 30 °C.", "Hepático; semivida 10 h."),
+  D("A07DA03", "Loperamida", "Antidiarreico opioide", "Frena el tránsito intestinal.", "2 mg cápsulas.", "Imodium", "Diarrea aguda no infecciosa.", "Agonista mu intestinal.", "Estreñimiento y megacolon.", "Diarrea con fiebre o sangre.", "Inhibidores de P-gp elevan nivel.", "Tratamiento de soporte; hidratar.", "Menos de 30 °C.", "Semivida 11 h."),
+  D("A04AA01", "Ondansetrón", "Antiemético 5-HT3", "Control de náuseas y vómito.", "8 mg tabletas y ampollas.", "Zofran", "Vómito postoperatorio o quimioterapia.", "Bloquea receptores 5-HT3.", "Cefalea y prolongación QT.", "QT largo congénito.", "Fármacos proarrítmicos.", "Formas ODT se disuelven en lengua.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("A07CA01", "Suero oral OMS", "Rehidratante", "Solución hidroelectrolítica.", "Sobres fórmula baja osmolaridad.", "Pedialyte", "Deshidratación por diarrea.", "Cotransporte sodio-glucosa.", "Vómito si se da muy rápido.", "Íleo paralítico.", "Ninguna.", "Desechar a las 24 h de preparado.", "Menos de 30 °C.", "Absorción entérica.", "cucuta"),
+  D("A03FA01", "Metoclopramida", "Procinético", "Antiemético acelerador gástrico.", "10 mg tabletas y ampollas.", "Plasil", "Gastroparesia y vómitos.", "Antagonista D2 dopaminérgico.", "Reacciones extrapiramidales (distonía).", "Obstrucción intestinal.", "Antipsicóticos elevan distonía.", "Uso máximo 5 días continuos.", "Menos de 30 °C.", "Semivida 5 h."),
+  D("B01AB05", "Enoxaparina 60 mg", "HBPM terapéutica", "Anticoagulante parenteral predecible.", "60 mg/0.6 mL jeringa.", "Clexane", "Tratamiento TVP y TEP.", "Inhibe factor Xa vía antitrombina III.", "Sangrado y trombocitopenia.", "Sangrado activo mayor.", "AINE elevan sangrado.", "No purgar la burbuja antes de inyectar.", "Menos de 25 °C.", "SC renal; semivida 5 h."),
+  D("B01AC04", "Clopidogrel", "Antiagregante P2Y12", "Inhibidor plaquetario profármaco.", "75 mg tabletas.", "Plavix", "Post-stent e infarto de miocardio.", "Bloqueo irreversible de P2Y12.", "Hemorragia y hematomas.", "Hemorragia activa.", "Omeprazol reduce su activación.", "Profármaco activado por CYP2C19.", "Menos de 30 °C.", "Efecto dura 7 días."),
+  D("B03AA07", "Sulfato ferroso", "Suplemento hierro", "Sal mineral para hemoglobina.", "300 mg tabletas.", "Genfar", "Anemia ferropénica.", "Aporte de hierro elemental.", "Heces negras y estreñimiento.", "Hemocromatosis.", "Antiácidos y calcio bajan absorción.", "Tomar con cítricos; alejar del té.", "Menos de 30 °C.", "Duodenal."),
+  D("B03BB01", "Ácido fólico", "Vitamina B9", "Vitamina para síntesis de ADN.", "1 y 5 mg tabletas.", "MK", "Prevención defectos tubo neural.", "Cofactor de purinas.", "Bien tolerado.", "Anemia perniciosa no tratada.", "Fenitoína reduce nivel.", "Iniciar antes del embarazo.", "Menos de 30 °C.", "Hepático."),
+  D("C07AB03", "Atenolol", "Betabloqueador beta-1", "Hipotensor y antiarrítmico.", "50 y 100 mg tabletas.", "Tenormin", "Hipertensión y taquicardias.", "Bloqueo selectivo beta-1.", "Bradicardia y frialdad distal.", "Bloqueo AV severo.", "Verapamilo causa paro sinusal.", "No retirar bruscamente.", "Menos de 30 °C.", "Renal; semivida 7 h."),
+  D("C03CA01", "Furosemida", "Diurético de asa", "Depurador salino rápido.", "40 mg tabletas y 20 mg ampolla.", "Lasix", "Edema pulmonar y falla cardíaca.", "Inhibe cotransportador Na-K-2Cl.", "Hipopotasemia y deshidratación.", "Anuria e hipovolemia.", "Aminoglucósidos suman ototoxicidad.", "Administrar en la mañana.", "Menos de 30 °C.", "Semivida 2 h."),
+  D("C03AA03", "Hidroclorotiazida", "Tiazida", "Antihipertensivo de base.", "25 mg tabletas.", "Esidrex", "Hipertensión arterial esencial.", "Inhibe cotransportador Na-Cl.", "Hiponatremia e hiperuricemia.", "Gota aguda y anuria.", "AINE reducen su eficacia.", "Ahorra calcio urinario.", "Menos de 30 °C.", "Renal."),
+  D("C10AA05", "Atorvastatina", "Estatina HMG-CoA", "Reductor de colesterol LDL.", "20 y 40 mg tabletas.", "Lipitor", "Dislipidemia y prevención coronaria.", "Inhibe HMG-CoA reductasa.", "Mialgias y rabdomiólisis rara.", "Hepatopatía activa y embarazo.", "Claritromicina eleva toxicidad.", "Monitorear transaminasas si hay dolor.", "Menos de 30 °C.", "Semivida 14 h."),
+  D("H03AA01", "Levotiroxina", "Hormona tiroidea", "Tiroxina T4 sintética pura.", "50 y 100 mcg tabletas.", "Euthyrox", "Hipotiroidismo clínico.", "Estimula receptores nucleares.", "Taquicardia e insomnio.", "Tirotoxicosis activa.", "Calcio y café anulan absorción.", "Ayuno estricto con agua pura.", "Menos de 25 °C.", "Semivida 7 días.", "cucuta"),
+  D("H02AB07", "Prednisona", "Glucocorticoide", "Inmunosupresor sistémico.", "5 y 20 mg tabletas.", "Meticorten", "Asma y enfermedades autoinmunes.", "Inhibe transcripción NF-kB.", "Hiperglucemia y síndrome de Cushing.", "Micosis sistémica.", "AINE elevan úlceras.", "Retiro gradual para evitar crisis.", "Menos de 30 °C.", "Hepático."),
+  D("H02AB02", "Dexametasona", "Corticoide potente", "Antiinflamatorio de larga acción.", "4 y 8 mg ampollas.", "Decadron", "Edema cerebral y maduración fetal.", "Agonista glucocorticoide puro.", "Insomnio e inmunosupresión.", "Infección no tratada.", "Fenitoína baja su eficacia.", "Nula acción mineralocorticoide.", "Menos de 30 °C.", "Semivida 36 h."),
+  D("J01CR02", "Amoxicilina + Clavulánico", "Penicilina protegida", "Bactericida amplio espectro.", "500/125 mg tabletas.", "Augmentin", "Sinusitis y mordeduras.", "Inhibe pared y betalactamasas.", "Diarrea frecuente.", "Ictericia colestásica previa.", "Warfarina altera INR.", "Suspensión va en nevera obligatoria.", "2-8 °C reconstituida.", "Semivida 1 h.", "cucuta atb"),
+  D("J01FA10", "Azitromicina", "Macrólido azálido", "Inhibidor proteico de larga vida.", "500 mg tabletas.", "Zitromax", "Infecciones respiratorias y ETS.", "Se une subunidad 50S.", "Diarrea y prolongación QT.", "QT largo y colestasis.", "Antiácidos bajan absorción.", "Dosis única diaria por 3-5 días.", "Menos de 30 °C.", "Semivida 68 h.", "atb"),
+  D("J01MA02", "Ciprofloxacino", "Fluoroquinolona", "Bactericida de amplia llegada.", "500 mg tabletas.", "Ciprobay", "Pielonefritis y diarrea bacteriana.", "Inhibe ADN girasa y topo IV.", "Tendinitis aquiliana y fotosensibilidad.", "Miastenia gravis y menores.", "Lácteos y hierro lo quelan.", "Separar 2 horas de minerales.", "Menos de 30 °C.", "Semivida 4 h.", "atb"),
+  D("J01XD01", "Metronidazol", "Nitroimidazol", "Antianaerobio y antiparasitario.", "500 mg tabletas.", "Flagyl", "Amebiasis y vaginosis.", "Genera radicales lesivos de ADN.", "Sabor metálico y náusea.", "Primer trimestre y alcohol.", "Efecto disulfiram con licor.", "Cero alcohol hasta 72 h post-toma.", "Menos de 30 °C.", "Semivida 8 h.", "atb"),
+  D("J01EE01", "Cotrimoxazol", "Sulfamida diaminopirimidina", "Bloqueo secuencial folato.", "800/160 mg tabletas.", "Bactrim", "Infección urinaria y Pneumocystis.", "Inhibe dihidrofolato reductasa.", "Síndrome Stevens-Johnson.", "Alergia a sulfas y déficit G6PD.", "Dispara el INR con warfarina.", "Tomar con abundante líquido.", "Menos de 30 °C.", "Semivida 10 h.", "atb"),
+  D("J01DB01", "Cefalexina", "Cefalosporina 1.ª gen", "Betalactámico antiestafilocócico.", "500 mg cápsulas.", "Keflex", "Infecciones piel y tejidos blandos.", "Inhibe síntesis pared bacteriana.", "Diarrea y rash cutáneo.", "Alergia a cefalosporinas.", "Probenecid eleva su nivel.", "Suspensión requiere refrigeración.", "2-8 °C reconstituida.", "Semivida 1 h.", "cucuta atb"),
+  D("J01CE08", "Penicilina benzatínica", "Penicilina de depósito", "Bactericida de liberación lenta.", "1.2 y 2.4 M UI vial.", "Benzetacil", "Sífilis y profilaxis reumática.", "Inhibe pared celular.", "Dolor glúteo y anafilaxia.", "Alergia a penicilina. Nunca IV.", "Probenecid retarda salida.", "Exclusiva vía intramuscular profunda.", "Menos de 25 °C.", "Nivel 3 semanas.", "atb"),
+  D("J02AC01", "Fluconazol", "Antifúngico azólico", "Inhibidor de síntesis fúngica.", "150 y 200 mg cápsulas.", "Diflucan", "Candidiasis vaginal y sistémica.", "Bloquea 14-alfa desmetilasa.", "Elevación transaminasas y QT.", "Embarazo.", "Potente inhibidor CYP2C9.", "Monodosis de 150 mg en vaginitis.", "Menos de 30 °C.", "Semivida 30 h."),
+  D("M01AB05", "Diclofenaco", "AINE acético", "Antiinflamatorio y analgésico.", "50 mg tabletas y 75 mg ampolla.", "Voltaren", "Cólico renal y osteoartritis.", "Inhibición no selectiva COX.", "Úlcera gástrica y daño renal.", "Úlcera activa y dengue.", "Anticoagulantes elevan sangrado.", "Ampolla IM profunda en glúteo.", "Menos de 30 °C.", "Semivida 2 h.", "cucuta"),
+  D("N03AE01", "Clonazepam", "Benzodiacepina FNE", "Anticonvulsivante y ansiolítico.", "2 mg tabletas y gotas.", "Rivotril", "Crisis mioclónicas y pánico.", "Apertura canal cloro por GABA.", "Sedación, ataxia y tolerancia.", "Falla respiratoria y glaucoma.", "Alcohol duplica paro respiratorio.", "Control especial; fórmula 30 días.", "Bajo llave.", "Semivida 35 h.", "fne"),
+  D("N02BA01", "AAS 500 mg", "Salicilato analgésico", "Antiinflamatorio y antipirético.", "500 mg tabletas.", "Aspirina", "Fiebre y mialgias del adulto.", "Inhibe COX periférica.", "Epigastralgia y hemorragia.", "Sospecha dengue y niños virales.", "Warfarina multiplica sangrado.", "Contraindicada en niños por Reye.", "Menos de 30 °C.", "Semivida 3 h.", "cucuta"),
+  D("N03AF01", "Carbamazepina", "Antiepiléptico", "Estabilizador y bloqueador Na.", "200 y 400 mg tabletas.", "Tegretol", "Neuralgia trigémino y epilepsia.", "Inactiva canales sodio voltaje.", "Diplopía, hiponatremia y rash.", "Bloqueo AV y depresión medular.", "Inductor masivo de CYP3A4.", "Anula eficacia de anticonceptivos.", "Menos de 30 °C.", "Semivida 15 h."),
+  D("N06AB03", "Fluoxetina", "ISRS", "Antidepresivo selectivo.", "20 mg cápsulas.", "Prozac", "Depresión y bulimia nerviosa.", "Bloquea transportador SERT.", "Insomnio, náusea y disfunción.", "Uso de IMAO simultáneo.", "Tramadol genera serotonina tóxica.", "Respuesta clínica tarda 2-4 semanas.", "Menos de 30 °C.", "Semivida 4 días."),
+  D("R06AX13", "Loratadina", "Antihistamínico H1", "Antialérgico periférico puro.", "10 mg tabletas y jarabe.", "Clarityne", "Rinitis alérgica y urticaria.", "Antagonista H1 periférico.", "Boca seca y cefalea.", "Hipersensibilidad.", "Cimetidina eleva su nivel.", "No causa somnolencia marcada.", "Menos de 30 °C.", "Semivida 8 h."),
+  D("A02BA03", "Famotidina", "Antagonista H2", "Antiácido antihistamínico.", "40 mg tabletas.", "Pepcid", "Gastritis y pirosis nocturna.", "Bloquea receptores H2 parietales.", "Cefalea y mareo.", "Hipersensibilidad.", "Altera absorción de azoles.", "Tomar antes de dormir.", "Menos de 30 °C.", "Semivida 3 h."),
+  D("A06AD11", "Lactulosa", "Laxante osmótico", "Disacárido no absorbible.", "Jarabe 66.7 g/100 mL.", "Duphalac", "Constipación y encefalopatía.", "Atrae agua al colon y fija amonio.", "Flatulencia y cólicos.", "Galactosemia y obstrucción.", "Otros laxantes simultáneos.", "Ajustar a 2-3 deposiciones blandas.", "Menos de 25 °C.", "Acción local."),
+  D("A10BB12", "Glimepirida", "Sulfonilurea 3.ª gen", "Secretagogo de acción continua.", "2 y 4 mg tabletas.", "Amaryl", "Diabetes mellitus tipo 2.", "Cierra canales K-ATP beta.", "Hipoglucemia y ganancia de peso.", "Cetoacidosis y embarazo.", "Alcohol y fluconazol bajan glucosa.", "Tomar con el desayuno siempre.", "Menos de 30 °C.", "Semivida 8 h."),
+  D("B01AF01", "Rivaroxabán", "DOAC anti-Xa", "Anticoagulación oral directa.", "15 y 20 mg tabletas.", "Xarelto", "FA no valvular y TVP.", "Inhibición directa factor Xa.", "Sangrado y anemia.", "Hemorragia activa e insuficiencia hepática.", "Ketoconazol eleva su efecto.", "Dosis 15 y 20 mg se toman con cena.", "Menos de 30 °C.", "Semivida 9 h."),
+  D("B02BA01", "Fitomenadiona", "Vitamina K1", "Factor procoagulante.", "10 mg/mL ampolla.", "Konakion", "Reversión sangrado por warfarina.", "Cofactor carboxilación II, VII, IX, X.", "Hipotensión si infusión IV es veloz.", "Hipersensibilidad.", "Antagoniza warfarina.", "Proteger de la luz. Efecto en horas.", "Menos de 25 °C luz.", "Semivida 2 h."),
+  D("C01AA05", "Digoxina", "Cardiotónico", "Glucósido inotrópico positivo.", "0.25 mg tabletas.", "Lanoxin", "Falla cardíaca y fibrilación.", "Inhibe bomba Na/K ATPasa miocárdica.", "Xantopsia (visión amarilla) y arritmia.", "Fibrilación ventricular.", "Hipopotasemia dispara toxicidad.", "Margen estrecho; vigilar pulso.", "Menos de 30 °C.", "Semivida 36 h."),
+  D("C07AB02", "Metoprolol", "Betabloqueador beta-1", "Depresor cardíaco cronotrópico.", "50 y 100 mg tabletas.", "Lopresor", "Angina, infarto e hipertensión.", "Bloqueo selectivo beta-1.", "Bradicardia e hipotensión.", "Choque y bloqueo AV severo.", "Verapamilo causa bradicardia mortal.", "No cortar la toma de golpe.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("C03DA01", "Espironolactona", "Ahorrador potasio", "Antagonista de aldosterona.", "25 y 100 mg tabletas.", "Aldactone", "Ascitis cirrótica y falla cardíaca.", "Bloquea receptor aldosterona distal.", "Hiperpotasemia y ginecomastia.", "Falla renal e hiperpotasemia.", "IECA y ARA-II suman potasio.", "Vigilar creatinina y potasio sérico.", "Menos de 30 °C.", "Semivida 15 h."),
+  D("C01DA02", "Nitroglicerina", "Nitrato rápido", "Vasodilatador coronario.", "0.4 mg tabletas sublinguales.", "Nitrostat", "Crisis de angina de pecho.", "Libera óxido nítrico venoso.", "Cefalea intensa e hipotensión.", "Uso de sildenafilo o choque.", "Sildenafilo causa colapso mortal.", "Tomar sentado para evitar síncope.", "Vidrio ámbar original.", "Semivida 3 min."),
+  D("C10AA01", "Simvastatina", "Estatina nocturna", "Hipolipemiante lipofílico.", "20 y 40 mg tabletas.", "Zocor", "Hipercolesterolemia primaria.", "Inhibición de HMG-CoA reductasa.", "Mialgias y debilidad muscular.", "Hepatopatía y embarazo.", "Jugo de toronja y macrólidos.", "Tomar exclusivamente en la noche.", "Menos de 30 °C.", "Semivida 3 h."),
+  D("J01FA09", "Claritromicina", "Macrólido 50S", "Antibiótico anti-Helicobacter.", "500 mg tabletas.", "Klaricid", "H. pylori e infecciones respiratorias.", "Bloqueo síntesis proteica 50S.", "Sabor metálico y náusea.", "Uso simultáneo con simvastatina.", "Inhibe fuertemente CYP3A4.", "Completar tratamiento exacto.", "Menos de 30 °C.", "Semivida 5 h.", "atb"),
+  D("J01AA02", "Doxiciclina", "Tetraciclina oral", "Antibiótico bacteriostático.", "100 mg cápsulas.", "Vibramicina", "Acné y rickettsiosis.", "Se une subunidad 30S.", "Esofagitis y fotosensibilidad.", "Embarazo y menores de 8 años.", "Calcio y antiácidos anulan absorción.", "Tomar erguido con abundante agua.", "Menos de 25 °C.", "Semivida 18 h.", "atb"),
+  D("J01GB03", "Gentamicina", "Aminoglucósido IV", "Bactericida gramnegativo.", "80 mg/2 mL ampolla.", "Garamicina", "Sepsis e infecciones complicadas.", "Errores lectura ribosomal 30S.", "Nefrotoxicidad y ototoxicidad.", "Miastenia gravis y embarazo.", "Furosemida duplica sordera.", "Monitorear diuresis y creatinina.", "Menos de 30 °C.", "Semivida 2 h.", "atb"),
+  D("M01AE02", "Naproxeno", "AINE propiónico", "Analgésico de acción larga.", "250 y 500 mg tabletas.", "Flanax", "Artritis y dismenorrea.", "Inhibición no selectiva COX.", "Gastritis y retención hídrica.", "Úlcera péptica activa.", "Anticoagulantes elevan sangrado.", "Administrar junto con comida.", "Menos de 30 °C.", "Semivida 14 h."),
+  D("M04AA01", "Alopurinol", "Antigotoso hipouricemiante", "Inhibidor de xantina oxidasa.", "100 y 300 mg tabletas.", "Zyloric", "Profilaxis de gota tofácea.", "Bloquea síntesis de ácido úrico.", "Erupción cutánea hipersensible.", "Ataque agudo de gota.", "Azatioprina multiplica toxicidad.", "No iniciar en plena crisis aguda.", "Menos de 30 °C.", "Semivida 15 h."),
+  D("N05AD01", "Haloperidol", "Antipsicótico típico", "Bloqueador dopaminérgico.", "5 mg tabletas y ampollas.", "Haldol", "Esquizofrenia y delirio agitado.", "Antagonista potente receptor D2.", "Sintomatología extrapiramidal y QT.", "Parkinson y depresión del SNC.", "Prolongadores del QT suman arritmias.", "Vigilar rigidez y temblor agudo.", "Menos de 30 °C.", "Semivida 20 h."),
+  D("N05BA12", "Alprazolam", "Benzodiacepina corta", "Ansiolítico de control especial.", "0.5 y 1 mg tabletas.", "Xanax", "Trastorno de pánico y ansiedad.", "Potencia acción GABA-A central.", "Somnolencia y farmacodependencia.", "Glaucoma de ángulo cerrado.", "Depresores centrales y alcohol.", "Control especial FNE. Retiro lento.", "Bajo llave.", "Semivida 12 h.", "fne"),
+  D("R03BA02", "Budesonida", "Corticoide tópico bronquial", "Desinflamatorio preventivo.", "200 mcg inhalador.", "Pulmicort", "Mantenimiento del asma y EPOC.", "Frena mediadores bronquiales.", "Candidiasis orofaríngea y disfonía.", "Crisis asmática aguda.", "Ketoconazol eleva exposición.", "Enjuague bucal post-disparo.", "Menos de 30 °C.", "Acción local."),
+  D("R05CB01", "Acetilcisteína", "Mucolítico y antídoto", "Rompedor de puentes disulfuro.", "600 mg sobres.", "Fluimucil", "Broncorrea e intoxicación paracetamol.", "Repone glutatión intracelular.", "Náuseas y vómito.", "Hipersensibilidad.", "No asociar con antitusivos secos.", "Antídoto del paracetamol.", "Menos de 25 °C.", "Semivida 6 h."),
+  D("A12BA01", "Cloruro de potasio", "Electrolito concentrado", "Sal de restitución iónica.", "2 mEq/mL ampolla.", "KCl", "Hipopotasemia sintomática.", "Repone potencial de membrana.", "Flebopatía e hiperpotasemia letal.", "Hiperpotasemia y anuria.", "IECA y espironolactona elevan K.", "NUNCA aplicar IV directo: diluir.", "Menos de 30 °C.", "Renal."),
+  D("A10AE04", "Insulina glargina", "Insulina ultra-lenta", "Basal plana sin pico.", "100 UI/mL pluma.", "Lantus", "Diabetes tipo 1 y 2.", "Microprecipitados de lenta entrega.", "Hipoglucemia.", "Hipoglucemia activa.", "Betabloqueadores ocultan síntomas.", "No mezclar jamás en la misma jeringa.", "2-8 °C sin abrir.", "Duración 24 h.", "frio"),
+  D("C08CA05", "Nifedipino", "Calcioantagonista vascular", "Vasodilatador dihidropiridínico.", "30 mg tabletas retard.", "Adalat", "Hipertensión y tocolisis.", "Bloqueo canales calcio arteriolares.", "Rubor, cefalea y edema.", "Choque e infarto reciente.", "Jugo de toronja eleva nivel.", "No triturar tabletas de larga acción.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("C08DA01", "Verapamilo", "Calcioantagonista nodo AV", "Frenador nodal y antiarrítmico.", "80 mg tabletas y 5 mg ampolla.", "Isoptin", "Taquicardia supraventricular.", "Bloqueo de canales calcio en nodo AV.", "Constipación severa y bradicardia.", "Falla cardíaca y bloqueo AV.", "Betabloqueantes causan paro.", "El estreñimiento es muy común.", "Menos de 30 °C.", "Semivida 6 h."),
+  D("C01BD01", "Amiodarona", "Antiarrítmico clase III", "Bloqueador multicanal yodo.", "200 mg tabletas y 150 mg ampolla.", "Cordarone", "Fibrilación y taquicardia ventricular.", "Prolonga potencial de acción cardíaco.", "Fibrosis pulmonar y tiroidopatía.", "Bradicardia sinusal y QT largo.", "Duplica niveles de digoxina.", "Contiene yodo; vigilar TSH y tórax.", "Menos de 30 °C luz.", "Semivida 50 días."),
+  D("C09AA05", "Ramipril", "IECA tisular", "Cardioprotector e hipotensor.", "5 mg tabletas.", "Tritace", "Hipertensión post-infarto.", "Inhibición de enzima ECA.", "Tos seca e hiperpotasemia.", "Embarazo y angioedema.", "Suplementos de potasio.", "Suspender ante edema labial.", "Menos de 30 °C.", "Semivida 15 h."),
+  D("C10AB05", "Fenofibrato", "Fibrato hipolipemiante", "Reductor potente de triglicéridos.", "200 mg cápsulas.", "Lipidil", "Hipertrigliceridemia severa.", "Agonista del receptor PPAR-alfa.", "Miopatía y litiasis biliar.", "Falla renal o hepática.", "Estatinas elevan rabdomiólisis.", "Tomar junto con la comida.", "Menos de 30 °C.", "Semivida 20 h."),
+  D("H02AB04", "Metilprednisolona", "Corticoide parenteral", "Antiinflamatorio de choque.", "40 y 500 mg vial.", "Solu-Medrol", "Crisis asmática y trasplantes.", "Inhibe síntesis de citocinas.", "Hiperglucemia aguda.", "Infección fúngica.", "AINE elevan sangrado.", "Pulsos IV requieren control ECG.", "Menos de 30 °C.", "Semivida 3 h."),
+  D("H03BB02", "Tiamazol", "Antitiroideo", "Frenador hormonal tiroideo.", "5 mg tabletas.", "Tapazole", "Hipertiroidismo de Graves.", "Inhibe peroxidasa tiroidea.", "Agranulocitosis (fiebre/odinofagia).", "Hipersensibilidad.", "Altera dosis de warfarina.", "Consultar ante dolor de garganta.", "Menos de 30 °C.", "Semivida 5 h."),
+  D("J01CF04", "Oxacilina", "Penicilina antiestafilococo", "Resistente a penicilinasa.", "1 g vial IV.", "Prostafilina", "Infección por S. aureus sensible.", "Inhibe pared bacteriana.", "Flebitis y nefritis intersticial.", "Alergia a penicilinas.", "Probenecid retarda salida.", "No cubre SARM; infundir lento.", "Menos de 30 °C.", "Semivida 40 min.", "atb"),
+  D("J01DC02", "Cefuroxima", "Cefalosporina 2.ª gen", "Betalactámico respiratorio.", "500 mg tabletas.", "Zinnat", "Neumonía y sinusitis bacteriana.", "Bloqueo síntesis pared celular.", "Diarrea y náuseas.", "Alergia a cefalosporinas.", "Antiácidos reducen absorción.", "Tomar con alimentos mejora nivel.", "Menos de 30 °C.", "Semivida 1.5 h.", "atb"),
+  D("J01XE01", "Nitrofurantoína", "Antiséptico urinario", "Bactericida vesical puro.", "100 mg cápsulas.", "Macrodantina", "Cistitis aguda no complicada.", "Daña ribosomas y ADN bacteriano.", "Orina marrón y fibrosis pulmonar.", "Falla renal (TFG < 30) y término.", "Magnesio baja su absorción.", "No sirve en pielonefritis; orina marrón.", "Menos de 30 °C.", "Renal.", "atb"),
+  D("J01MA12", "Levofloxacino", "Fluoroquinolona respiratoria", "Bactericida amplio espectro.", "500 y 750 mg tabletas.", "Tavanic", "Neumonía adquirida en comunidad.", "Inhibe ADN girasa y topo IV.", "Rotura de tendón y QT largo.", "Tendinopatía previa y menores.", "Hierro y antiácidos lo quelan.", "Separar 2 horas de minerales.", "Menos de 30 °C.", "Semivida 7 h.", "atb"),
+  D("J05AB01", "Aciclovir", "Antiviral herpes", "Inhibidor de ADN polimerasa.", "200 y 800 mg tabletas.", "Zovirax", "Herpes zóster y labial.", "Trifosfato bloquea síntesis viral.", "Cristaluria y nefrotoxicidad IV.", "Hipersensibilidad.", "Fármacos nefrotóxicos.", "Abundante hidratación oral obligatoria.", "Menos de 25 °C.", "Semivida 3 h."),
+  D("N03AG01", "Ácido valproico", "Antiepiléptico amplio", "Modulador GABA y sodio.", "250 y 500 mg tabletas.", "Depakote", "Epilepsia y manía bipolar.", "Eleva niveles de GABA.", "Hepatotoxicidad y teratogénesis.", "Embarazo (defecto tubo neural).", "Carbapenémicos anulan su efecto.", "Teratogénico: evitar en edad fértil.", "Menos de 30 °C.", "Semivida 12 h."),
+  D("N03AB02", "Fenitoína", "Anticonvulsivante clásico", "Estabilizador membrana neuronal.", "100 mg cápsulas y 250 mg ampolla.", "Epamin", "Estatus epiléptico y crisis.", "Bloquea canales de sodio.", "Hiperplasia gingival y nistagmo.", "Bloqueo sinusal.", "Inductor masivo de CYP450.", "Cinética no lineal; higiene bucal.", "Menos de 30 °C.", "Semivida 22 h."),
+  D("N06AA09", "Amitriptilina", "Tricíclico", "Inhibidor no selectivo aminas.", "25 mg tabletas.", "Tryptanol", "Dolor neuropático y migraña.", "Bloquea recaptación monoaminas.", "Boca seca, sedación y arritmias.", "Infarto reciente y glaucoma.", "IMAO causa toxicidad severa.", "Muy peligrosa en sobredosis; tomar de noche.", "Menos de 30 °C.", "Semivida 20 h."),
+  D("N05AX08", "Risperidona", "Antipsicótico atípico", "Antagonista dual D2/5-HT2A.", "2 mg tabletas.", "Risperdal", "Esquizofrenia y manía.", "Bloqueo serotoninérgico y D2.", "Aumento de peso e hiperprolactina.", "Hipersensibilidad.", "Fluoxetina sube su nivel.", "Monitorear peso y glucemia.", "Menos de 30 °C.", "Semivida 20 h."),
+  D("N01BB02", "Lidocaína", "Anestésico amídico", "Bloqueador local impulso nervioso.", "Solución inyectable 1% y 2%.", "Xylocaína", "Anestesia local y arritmias ventriculares.", "Bloquea canales de sodio.", "Toxicidad neurológica (convulsión).", "Alergia a amidas.", "Betabloqueadores bajan depuración.", "Con epinefrina: prohibida en dedos u orejas.", "Menos de 30 °C.", "Semivida 1.5 h."),
+  D("R03BB01", "Bromuro de ipratropio", "Anticolinérgico inhalado", "Broncodilatador muscarínico.", "20 mcg/dosis inhalador.", "Atrovent", "EPOC y asma con salbutamol.", "Bloquea receptores M3 bronquiales.", "Boca seca y tos.", "Alergia a atropina.", "Otros anticolinérgicos.", "Evitar que el spray toque los ojos.", "Menos de 30 °C.", "Acción local."),
+  D("R03DC03", "Montelukast", "Antileucotrieno", "Bloqueador inflamatorio oral.", "10 mg tabletas.", "Singulair", "Asma persistente y rinitis.", "Antagonista receptor CysLT1.", "Cefalea y sueños anormales.", "Hipersensibilidad.", "Fenobarbital baja su nivel.", "No sirve en crisis aguda; tomar de noche.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("A03AX13", "Simeticona", "Antiflatulento", "Desespumante intestinal.", "80 mg tabletas masticables.", "Gas-X", "Meteorismo y gases.", "Rompe tensión burbujas de gas.", "Bien tolerado.", "Obstrucción intestinal.", "Ninguna.", "Masticar bien tras las comidas.", "Menos de 30 °C.", "No absorbible."),
+  D("A02AD01", "Aluminio + Magnesio", "Antiácido local", "Neutralizante gástrico.", "Suspensión oral.", "Mylanta", "Pirosis y acidez ocasional.", "Neutraliza ácido clorhídrico.", "Aluminio estriñe; magnesio purga.", "Insuficiencia renal avanzada.", "Quinolonas y hierro pierden efecto.", "Separar 2 horas de cualquier fármaco.", "Menos de 30 °C.", "Acción local."),
+  D("A06AB02", "Bisacodilo", "Laxante por contacto", "Estimulante peristáltico.", "5 mg tabletas y 10 mg supositorios.", "Dulcolax", "Constipación aguda ocasional.", "Estimula plexo mientérico colónico.", "Cólicos y diarrea.", "Abdomen agudo quirúrgico.", "Leche y antiácidos dañan cubierta.", "Tragar entera; uso corto ocasional.", "Menos de 30 °C.", "Acción colónica."),
+  D("A12AA04", "Carbonato de calcio", "Suplemento cálcico", "Mineral óseo y antiácido.", "600 mg tabletas.", "Caltrate", "Osteoporosis y déficit calcio.", "Aporte de calcio elemental.", "Constipación y flatulencia.", "Hipercalcemia y litiasis.", "Anula absorción de levotiroxina.", "Separar 4 horas de la levotiroxina.", "Menos de 30 °C.", "Duodenal."),
+  D("B01AB01", "Heparina sódica", "Anticoagulante parenteral", "Inactivador de trombina.", "5000 UI/mL vial.", "Heparina", "Tromboembolismo e infarto agudo.", "Potencia antitrombina III contra IIa y Xa.", "Hemorragia y trombocitopenia (TIH).", "Sangrado activo y TIH previa.", "Aspirina eleva hemorragias.", "Control estricto con TTPa. Antídoto: Protamina.", "Menos de 30 °C.", "Semivida 1.5 h."),
+  D("B02AA02", "Ácido tranexámico", "Antifibrinolítico", "Estabilizador del coágulo.", "500 mg ampolla y tabletas.", "Transamin", "Hemorragia postparto y trauma.", "Bloquea sitios lisina plasminógeno.", "Trombosis venosa y náuseas.", "Trombosis activa y CID.", "Anticonceptivos orales elevan trombos.", "Infundir IV lento para evitar hipotensión.", "Menos de 30 °C.", "Semivida 2 h."),
+  D("B03BA01", "Cianocobalamina", "Vitamina B12", "Cofactor hematopoyético.", "1000 mcg ampolla IM.", "Neurobión", "Anemia perniciosa y neuropatía.", "Cofactor de síntesis de ADN.", "Raras reacciones alérgicas.", "Hipersensibilidad al cobalto.", "Metformina crónica reduce su absorción.", "En anemia perniciosa la vía es IM.", "Menos de 30 °C luz.", "Depósito hepático."),
+  D("C09AA01", "Captopril", "IECA corto", "Antihipertensivo sulfhidrilo.", "25 y 50 mg tabletas.", "Capoten", "Crisis hipertensivas e insuficiencia.", "Inhibición rápida de la ECA.", "Tos seca, alteración gusto e hipotensión.", "Embarazo y angioedema.", "Potasio genera hiperpotasemia.", "Tomar 1 hora antes de las comidas.", "Menos de 30 °C.", "Semivida 2 h."),
+  D("C07AA05", "Propranolol", "Betabloqueante no selectivo", "Bloqueador beta-1 y beta-2.", "40 mg tabletas.", "Inderal", "Temblor, migraña y tirotoxicosis.", "Bloqueo adrenérgico periférico y central.", "Broncoespasmo y bradicardia.", "Asma bronquial y bloqueo AV.", "Antagoniza al salbutamol.", "Prohibido en asmáticos: broncoespasmo severo.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("C01DA08", "Isosorbida dinitrato", "Nitrato preventivo", "Venodilatador coronario.", "10 mg tabletas.", "Isordil", "Profilaxis de angina de esfuerzo.", "Entrega óxido nítrico endotelial.", "Cefalea pulsátil y tolerancia.", "Uso de sildenafilo e hipotensión.", "Inhibidores PDE5 causan choque.", "Exige intervalo libre de nitratos de 12 h.", "Menos de 30 °C.", "Semivida 1 h."),
+  D("C01CA24", "Epinefrina", "Adrenalina simpática", "Agonista alfa y beta total.", "1 mg/mL ampolla.", "Adrenalina", "Choque anafiláctico y paro cardíaco.", "Estimula receptores alfa-1, beta-1 y beta-2.", "Taquicardia ventricular e hipertensión.", "Ninguna en emergencia vital.", "Betabloqueantes alteran respuesta.", "En anafilaxia: vía IM en cara anterolateral muslo.", "Menos de 25 °C luz.", "Semivida 2 min."),
+  D("H02AB09", "Hidrocortisona", "Glucocorticoide fisiológico", "Corticoide sustitutivo y de choque.", "100 mg vial.", "Solu-Cortef", "Crisis suprarrenal y anafilaxia.", "Activa receptores nucleares.", "Retención sodio e hiperglucemia.", "Infección activa sin antibiótico.", "Hipoglucemiantes pierden poder.", "Fármaco de elección en choque suprarrenal.", "Menos de 30 °C.", "Semivida 2 h."),
+  D("J01CA01", "Ampicilina", "Aminopenicilina IV", "Bactericida enterocócico.", "1 g vial inyectable.", "Ampicil", "Meningitis por Listeria e infecciones.", "Inhibe transpeptidación pared.", "Rash alérgico y diarrea.", "Alergia a penicilinas.", "Alopurinol dispara erupción.", "Genera rash falso en mononucleosis.", "Menos de 30 °C.", "Semivida 1 h.", "atb"),
+  D("J01DB04", "Cefazolina", "Cefalosporina profiláctica", "Betalactámico quirúrgico.", "1 g vial inyectable.", "Kefzol", "Profilaxis quirúrgica limpia.", "Inhibe síntesis pared celular.", "Flebitis y reacciones alérgicas.", "Alergia a cefalosporinas.", "Aminoglucósidos suman lesión renal.", "Aplicar 30-60 min antes de la incisión.", "Menos de 30 °C.", "Semivida 1.8 h.", "atb"),
+  D("J01GB06", "Amikacina", "Aminoglucósido resistente", "Bactericida de rescate.", "500 mg/2 mL ampolla.", "Amikin", "Infecciones gramnegativas severas.", "Fija subunidad 30S ribosomal.", "Nefrotoxicidad y sordera.", "Miastenia gravis y embarazo.", "Vancomicina eleva lesión renal.", "Monitorear función renal estrictamente.", "Menos de 30 °C.", "Semivida 2.5 h.", "atb"),
+  D("M01AB15", "Ketorolaco", "AINE potente", "Analgésico mayor no esteroideo.", "30 mg/mL ampolla.", "Toradol", "Dolor agudo moderado a severo.", "Inhibidor potente COX-1 y COX-2.", "Sangrado digestivo y falla renal.", "Úlcera, insuficiencia renal y sangrado.", "Otros AINE multiplican toxicidad.", "Uso máximo absoluto de 5 días continuos.", "Menos de 30 °C luz.", "Semivida 5 h."),
+  D("M03BX01", "Baclofeno", "Relajante GABA-B", "Antiespástico espinal.", "10 mg tabletas.", "Lioresal", "Espasticidad por esclerosis múltiple.", "Agonista del receptor GABA-B.", "Sedación, mareo y debilidad.", "Hipersensibilidad.", "Alcohol multiplica somnolencia.", "Retiro abrupto causa convulsiones.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("N03AA02", "Fenobarbital", "Barbitúrico FNE", "Anticonvulsivante sedante.", "100 mg tabletas.", "Fenobarbital", "Epilepsia y convulsiones neonatales.", "Prolonga apertura canal cloro por GABA.", "Depresión respiratoria y adicción.", "Porfiria aguda intermitente.", "Inductor enzimático severo.", "Control especial FNE; custodia estricta.", "Bajo llave.", "Semivida 90 h.", "fne"),
+  D("N06AB06", "Sertralina", "ISRS", "Antidepresivo selectivo serotonina.", "50 y 100 mg tabletas.", "Zoloft", "Depresión mayor, TOC y pánico.", "Inhibe recaptación serotonina (SERT).", "Náuseas, insomnio y disfunción sexual.", "Coadministración con IMAO.", "Tramadol genera síndrome serotoninérgico.", "Efecto terapéutico a partir de la 3.ª semana.", "Menos de 30 °C.", "Semivida 26 h."),
+  D("N05BA06", "Lorazepam", "Benzodiacepina intermedia", "Ansiolítico e hipnótico FNE.", "2 mg tabletas y 4 mg ampolla.", "Ativan", "Ansiedad severa y crisis epilépticas.", "Potencia GABA sobre receptor GABA-A.", "Sedación, amnesia y dependencia.", "Glaucoma de ángulo cerrado.", "Alcohol duplica paro respiratorio.", "Glucuronidación directa: seguro en ancianos.", "Bajo llave.", "Semivida 14 h.", "fne"),
+  D("N03AX12", "Gabapentina", "Gabapentinoide", "Modulador del dolor neuropático.", "300 y 400 mg cápsulas.", "Neurontin", "Neuropatía diabética y neuralgia.", "Se une a subunidad alfa-2-delta calcio.", "Mareo, somnolencia y edema periférico.", "Hipersensibilidad.", "Antiácidos con aluminio bajan absorción.", "Separar 2 horas de antiácidos.", "Menos de 30 °C.", "Renal."),
+  D("N02BB02", "Dipirona", "Pirazolona analgésica", "Antipirético y espasmolítico.", "1 g ampolla y 500 mg tabletas.", "Novalgina", "Fiebre refractaria y dolor agudo.", "Inhibe síntesis prostaglandinas central.", "Hipotensión con IV rápida y agranulocitosis.", "Alergia a pirazolonas y porfiria.", "Ciclosporina reduce su concentración.", "Prohibida inyección IV directa rápida.", "Menos de 30 °C.", "Semivida 7 h."),
+  D("N04BA02", "Levodopa + Carbidopa", "Precursor dopamina", "Terapia dopaminérgica sustitutiva.", "250/25 mg tabletas.", "Sinemet", "Enfermedad de Parkinson idiopática.", "Se transforma en dopamina central.", "Discinesias, náuseas e hipotensión.", "Glaucoma ángulo cerrado e IMAO.", "Proteínas y hierro bajan su absorción.", "Tomar 30 minutos antes de comidas.", "Menos de 30 °C luz.", "Semivida 1.5 h."),
+  D("A02BC02", "Pantoprazol", "IBP alternativo", "Supresor ácido de baja interacción.", "40 mg tabletas y vial IV.", "Pantecta", "ERGE y úlcera duodenal.", "Inhibe bomba H/K ATPasa gástrica.", "Cefalea y diarrea leve.", "Hipersensibilidad a benzimidazoles.", "Menor inhibición de CYP2C19.", "De elección junto con Clopidogrel.", "Menos de 30 °C.", "Semivida 1 h."),
+  D("A02BC05", "Esomeprazol", "IBP enantiómero", "Isómero S activo de omeprazol.", "20 y 40 mg tabletas.", "Nexium", "Esofagitis erosiva grave.", "Bloquea bomba de protones parietal.", "Diarrea, cefalea y constipación.", "Uso con atazanavir.", "Disminuye ketoconazol.", "Tomar en ayunas con agua pura.", "Menos de 30 °C.", "Semivida 1.3 h."),
+  D("A03FA03", "Domperidona", "Procinético periférico", "Antidopaminérgico gástrico puro.", "10 mg tabletas.", "Motilium", "Dispepsia y náuseas.", "Antagonista D2 fuera de la BHE.", "Prolongación del intervalo QT.", "Arritmias cardíacas y obstrucción.", "Claritromicina eleva arritmias.", "Casi no pasa al cerebro: no seda.", "Menos de 30 °C.", "Semivida 7 h."),
+  D("A10BK01", "Dapagliflozina", "iSGLT2", "Glucosúrico antidiabético.", "10 mg tabletas.", "Forxiga", "Diabetes tipo 2 y falla cardíaca.", "Inhibe cotransportador SGLT2 renal.", "Infección urinaria y micosis genital.", "Cetoacidosis diabética.", "Diuréticos suman deshidratación.", "Higiene genital estricta diaria.", "Menos de 30 °C.", "Semivida 13 h."),
+  D("A10BH01", "Sitagliptina", "iDPP-4", "Potenciador de incretinas.", "100 mg tabletas.", "Januvia", "Diabetes mellitus tipo 2.", "Inhibe degradación de GLP-1.", "Nasofaringitis y pancreatitis rara.", "Diabetes tipo 1.", "Sulfonilureas elevan hipoglucemia.", "Bajo riesgo de hipoglucemia propia.", "Menos de 30 °C.", "Semivida 12 h."),
+  D("A10BJ06", "Semaglutida", "Agonista GLP-1", "Análogo incretina semanal.", "0.5 y 1 mg pluma SC.", "Ozempic", "Diabetes 2 y protección cardiovascular.", "Activa receptor GLP-1.", "Náuseas, vómitos y diarrea.", "Cáncer medular tiroides familiar.", "Retrasa absorción fármacos orales.", "Plumas sin abrir van refrigeradas.", "2-8 °C sin abrir.", "Semivida 1 semana.", "frio"),
+  D("B01AC06", "AAS 100 mg", "Antiagregante plaquetario", "Inhibidor irreversible COX-1.", "100 mg tabletas.", "Cardioaspirina", "Prevención secundaria post-infarto.", "Inactiva tromboxano A2 en plaquetas.", "Dispepsia y microhemorragias.", "Dengue y úlcera péptica activa.", "Ibuprofeno bloquea su sitio de acción.", "Prohibida ante sospecha de dengue.", "Menos de 30 °C seco.", "Efecto dura 7 días.", "cucuta"),
+  D("B01AF02", "Apixabán", "DOAC anti-Xa", "Inhibidor reversible factor Xa.", "5 mg tabletas.", "Eliquis", "Fibrilación auricular y TVP.", "Bloqueo directo del factor Xa.", "Hemorragia y hematomas.", "Sangrado mayor activo.", "Ketoconazol eleva su concentración.", "Dosis fija sin necesidad de INR.", "Menos de 30 °C.", "Semivida 12 h."),
+  D("B01AE07", "Dabigatrán", "DOAC anti-IIa", "Inhibidor directo trombina.", "110 y 150 mg cápsulas.", "Pradaxa", "Prevención embolia en FA.", "Inhibe trombina libre y unida.", "Dispepsia gástrica y sangrado.", "Falla renal severa y válvulas mecánicas.", "Dronedarona eleva su nivel.", "Conservar en blíster original seco.", "Menos de 25 °C seco.", "Semivida 13 h."),
+  D("B01AB02", "Enoxaparina 40 mg", "HBPM profiláctica", "Prevención tromboembólica venosa.", "40 mg/0.4 mL jeringa.", "Clexane", "Profilaxis trombosis quirúrgica.", "Potencia antitrombina contra factor Xa.", "Hematoma en punción y sangrado.", "Hemorragia activa.", "Antiagregantes suman sangrado.", "Inyección subcutánea en abdomen.", "Menos de 25 °C.", "Semivida 4.5 h.", "cucuta"),
+  D("C07AG02", "Carvedilol", "Bloqueador mixto alfa/beta", "Vasodilatador neurohormonal.", "12.5 y 25 mg tabletas.", "Dilatrend", "Insuficiencia cardíaca congestiva.", "Bloquea receptores beta-1, beta-2 y alfa-1.", "Mareo, bradicardia e hipotensión.", "Asma bronquial y bloqueo AV.", "Verapamilo deprime corazón.", "Tomar siempre con las comidas.", "Menos de 30 °C.", "Semivida 8 h."),
+  D("C09CA02", "Valsartán", "ARA-II", "Bloqueador selectivo AT1.", "80 y 160 mg tabletas.", "Diovan", "Falla cardíaca e hipertensión.", "Antagoniza receptor angiotensina II.", "Hipotensión e hiperpotasemia.", "Embarazo (teratogénico).", "Diuréticos ahorradores potasio.", "No produce la tos típica de IECA.", "Menos de 30 °C.", "Semivida 6 h."),
+  D("C08DB01", "Diltiazem", "Benzotiazepina", "Calcioantagonista intermedio.", "60 y 120 mg tabletas.", "Cardizem", "Angina de esfuerzo y taquicardia.", "Inhibe entrada de calcio miocitos.", "Bradicardia y edema de tobillos.", "Choque e insuficiencia descompensada.", "Inhibe CYP3A4 y eleva estatinas.", "No triturar formas retard.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("C02AC01", "Clonidina", "Agonista alfa-2 central", "Hipotensor central de rescate.", "0.15 mg tabletas.", "Catapresan", "Urgencias hipertensivas.", "Reduce eferencia simpática cerebral.", "Sedación intensa y boca seca.", "Bradicardia severa.", "Alcohol suma depresión central.", "Retirada brusca causa crisis rebote.", "Menos de 30 °C.", "Semivida 14 h."),
+  D("C01BC04", "Propafenona", "Antiarrítmico Ic", "Estabilizador rápido membrana.", "150 y 300 mg tabletas.", "Rythmol", "Fibrilación auricular paroxística.", "Bloquea canales rápidos de sodio.", "Sabor metálico y proarritmia.", "Falla cardíaca y broncoespasmo.", "Eleva niveles de digoxina.", "Monitoreo con ECG periódico.", "Menos de 30 °C.", "Semivida 6 h."),
+  D("C01CA07", "Dobutamina", "Inotrópico sintético", "Estimulador contracción cardíaca.", "250 mg/20 mL ampolla.", "Dobutrex", "Choque cardiogénico e insuficiencia.", "Agonista potente beta-1 miocárdico.", "Taquicardia ventricular y angina.", "Estenosis subaórtica hipertrófica.", "Betabloqueadores anulan su efecto.", "Uso hospitalario exclusivo por bomba.", "Menos de 30 °C.", "Semivida 2 min."),
+  D("C01CA04", "Dopamina", "Vasopresor catecolamina", "Soporte hemodinámico por goteo.", "200 mg/5 mL ampolla.", "Inotropisa", "Choque séptico y cardiogénico.", "Efecto alfa, beta y dopa dependiente.", "Arritmias y necrosis por fuga.", "Feocromocitoma.", "IMAO multiplican toxicidad.", "Extravasación causa necrosis tisular.", "Menos de 30 °C luz.", "Semivida 2 min."),
+  D("H02AB01", "Betametasona", "Corticoide fluorado", "Maduración pulmonar fetal.", "4 mg/mL ampolla.", "Celestone", "Amenaza de parto prematuro.", "Induce síntesis de surfactante.", "Hiperglucemia transitoria.", "Infección micótica activa.", "Reduce efecto de antidiabéticos.", "Esquema: 12 mg IM cada 24 h por 2 dosis.", "Menos de 30 °C.", "Semivida 36 h."),
+  D("H01BB02", "Oxitocina", "Uterotónico", "Inductor de contracción uterina.", "10 UI/mL ampolla.", "Syntocinon", "Parto y prevención hemorragia.", "Estimula receptores miometrio.", "Hipertonía uterina y rotura.", "Desproporción pélvica.", "Halotano baja su eficacia.", "Cadena de frío obligatoria 2-8 °C.", "2-8 °C obligatoria.", "Semivida 4 min.", "frio"),
+  D("J01CR05", "Piperacilina + Tazobactam", "Penicilina antipseudomónica", "Bactericida amplio nosocomial.", "4 g / 0.5 g vial.", "Tazocin", "Sepsis intraabdominal y neumonía.", "Inhibe pared bacteriana.", "Diarrea por C. difficile y rash.", "Alergia grave a betalactámicos.", "Vancomicina eleva lesión renal.", "Ajustar por función renal.", "Menos de 25 °C.", "Semivida 1 h.", "atb"),
+  D("J01DH02", "Meropenem", "Carbapenémico", "Bactericida BLEE hospitalario.", "1 g vial inyectable.", "Merrem", "Meningitis y peritonitis grave.", "Se une a PBP 2 y 3.", "Diarrea y erupción.", "Alergia a carbapenémicos.", "Anula niveles de ácido valproico.", "Nunca mezclar con valproato sódico.", "Menos de 30 °C.", "Semivida 1 h.", "atb"),
+  D("J01DD02", "Ceftazidima", "Cefalosporina 3.ª gen", "Betalactámico antipseudomona.", "1 g vial inyectable.", "Fortum", "Infección por Pseudomonas.", "Inhibe síntesis pared celular.", "Flebitis y neutropenia.", "Alergia a cefalosporinas.", "Aminoglucósidos suman lesión renal.", "Excelente penetración en LCR.", "Menos de 25 °C luz.", "Semivida 2 h.", "atb"),
+  D("J01DE01", "Cefepima", "Cefalosporina 4.ª gen", "Antipseudomónico resistente.", "1 y 2 g vial inyectable.", "Maxipime", "Neutropenia febril y sepsis.", "Pasa porinas de membrana externa.", "Neurotoxicidad y mioclonías.", "Alergia a betalactámicos.", "Nefrotóxicos aumentan daño.", "Ajustar dosis en insuficiencia renal.", "Menos de 30 °C luz.", "Semivida 2 h.", "atb"),
+  D("J01FF01", "Clindamicina", "Lincosamida", "Bacteriostático anaerobios.", "300 mg cápsulas y 600 mg ampolla.", "Dalacin C", "Infecciones óseas y dentales.", "Bloqueo síntesis proteica 50S.", "Colitis pseudomembranosa severa.", "Antecedente de colitis.", "Antagonismo con macrólidos.", "Suspender ante diarrea profusa.", "Menos de 30 °C.", "Semivida 2.5 h.", "atb"),
+  D("J01XX08", "Linezolid", "Oxazolidinona", "Bacteriostático SARM y ERV.", "600 mg tabletas y bolsa IV.", "Zyvox", "Neumonía y piel por gérmenes resistentes.", "Inhibe complejo 70S temprano.", "Trombocitopenia y mielosupresión.", "Uso simultáneo con ISRS.", "Inhibe MAO: crisis con serotonina.", "Monitorear hemograma semanal.", "Menos de 30 °C luz.", "Semivida 6 h.", "atb"),
+  D("J01DH51", "Imipenem + Cilastatina", "Carbapenémico protegido", "Bactericida amplio espectro.", "500/500 mg vial.", "Tienam", "Infecciones polimicrobianas.", "Inhibe PBP; cilastatina frena dihidropeptidasa.", "Náuseas e inducción de convulsiones.", "Alergia a carbapenémicos.", "Ganciclovir dispara convulsiones.", "Infundir lento (mínimo 40-60 min).", "Menos de 25 °C.", "Semivida 1 h.", "atb"),
+  D("J04AK01", "Isoniazida", "Antituberculoso", "Bactericida esencial TBC.", "100 y 300 mg tabletas.", "Genfar", "Tuberculosis activa y latente.", "Bloquea síntesis ácidos micólicos.", "Hepatitis y neuropatía periférica.", "Hepatopatía grave activa.", "Eleva fenitoína por CYP2C19.", "Asociar siempre con Piridoxina (B6).", "Menos de 30 °C.", "Semivida 2 h.", "atb"),
+  D("J04AB02", "Rifampicina", "Rifamicina", "Esterilizante en TBC.", "300 mg cápsulas.", "Rifadin", "Tuberculosis y lepra.", "Inhibe ARN polimerasa bacteriana.", "Tiñe orina y sudor de naranja.", "Falla hepática terminal.", "Inductor masivo de CYP3A4 y P-gp.", "Avisa al paciente del color naranja.", "Menos de 30 °C seco.", "Semivida 3 h.", "atb"),
+  D("J02AC02", "Itraconazol", "Triazol lipofílico", "Antimicótico profundo.", "100 mg cápsulas.", "Sporanox", "Onicomicosis e histoplasmosis.", "Bloquea síntesis de ergosterol.", "Molestia gástrica y colestasis.", "Falla cardíaca congestiva.", "Proscrito con simvastatina.", "Tomar tras almuerzo copioso.", "Menos de 25 °C seco.", "Semivida 35 h."),
+  D("J05AF05", "Zidovudina", "ITRN", "Inhibidor retroviral clave.", "300 mg tabletas y ampollas.", "Retrovir", "VIH y prevención perinatal.", "Termina cadena proviral de ADN.", "Anemia severa y neutropenia.", "Anemia grave (< 7.5 g/dL).", "Ganciclovir suma toxicidad medular.", "Fármaco clave intraparto.", "Menos de 30 °C luz.", "Semivida 1 h."),
+  D("M01AH01", "Celecoxib", "AINE selectivo COX-2", "Antiinflamatorio gastroprotegido.", "200 mg cápsulas.", "Celebrex", "Osteoartritis y artritis.", "Inhibe selectivamente COX-2.", "Riesgo aterotrombótico y edema.", "Infarto o ACV previo y sulfas.", "Fluconazol duplica su nivel.", "No dar a pacientes con angina o ACV.", "Menos de 30 °C.", "Semivida 10 h."),
+  D("M05BA04", "Alendronato", "Bisfosfonato semanal", "Antirresortivo osteoclástico.", "70 mg tabletas.", "Fosamax", "Osteoporosis posmenopáusica.", "Inhibe farnesil difosfato sintasa.", "Esofagitis erosiva severa.", "Estenosis esofágica e hipocalcemia.", "Calcio y comida anulan absorción.", "Ayuno total, erguido por 30 minutos.", "Menos de 30 °C.", "Fijación ósea."),
+  D("N06AB10", "Escitalopram", "ISRS puro", "Inhibidor serotonina selectivo.", "10 y 20 mg tabletas.", "Lexapro", "Depresión mayor y ansiedad.", "Bloqueo alostérico de SERT.", "Náuseas, mareo y QT largo.", "Uso de IMAO simultáneo.", "Tramadol genera serotonina tóxica.", "Respuesta a partir de las 2-4 semanas.", "Menos de 30 °C.", "Semivida 30 h."),
+  D("N05BA04", "Oxazepam", "Benzodiacepina corta", "Ansiolítico glucuronizado directo.", "15 mg tabletas.", "Serepax", "Ansiedad en hepatopatía.", "Modulador GABA-A.", "Sedación y ataxia.", "Miastenia gravis y coma.", "Alcohol multiplica depresión.", "De elección en cirrosis y ancianos.", "Bajo llave.", "Semivida 8 h.", "fne"),
+  D("N05BA08", "Bromazepam", "Benzodiacepina FNE", "Psicotrópico ansiolítico.", "3 y 6 mg tabletas.", "Lexotanil", "Crisis de pánico y angustia.", "Abre canales de cloruro por GABA.", "Somnolencia diurna y dependencia.", "Insuficiencia respiratoria.", "Alcohol deprime respiración.", "Control especial oficial FNE.", "Bajo llave.", "Semivida 16 h.", "fne"),
+  D("N03AX09", "Lamotrigina", "Antiepiléptico sodio", "Estabilizador del ánimo.", "50 y 100 mg tabletas.", "Lamictal", "Crisis focales y trastorno bipolar.", "Bloquea canales sodio y glutamato.", "Erupción cutánea y Stevens-Johnson.", "Hipersensibilidad.", "Valproato duplica su vida media.", "Suspender de inmediato ante rash.", "Menos de 30 °C.", "Semivida 28 h."),
+  D("N03AX14", "Levetiracetam", "Ligando SV2A", "Anticonvulsivante lineal.", "500 y 1000 mg tabletas.", "Keppra", "Epilepsia focal y mioclónica.", "Se une a proteína vesical SV2A.", "Irritabilidad y somnolencia.", "Hipersensibilidad.", "Mínimas interacciones hepáticas.", "Ideal en pacientes polimedicados.", "Menos de 30 °C.", "Semivida 7 h."),
+  D("N05AH04", "Quetiapina", "Antipsicótico atípico", "Antagonista D2 y 5-HT2A.", "100 y 200 mg tabletas.", "Seroquel", "Esquizofrenia y trastorno bipolar.", "Bloqueo dopaminérgico y sedante H1.", "Sedación marcada y aumento de peso.", "Coma y fármacos con QT largo.", "CYP3A4 altera niveles.", "Vigilar glucemia y peso mensual.", "Menos de 30 °C.", "Semivida 7 h."),
+  D("N05AH03", "Olanzapina", "Tienobenzodiazepina", "Neuroléptico atípico potente.", "10 mg tabletas.", "Zyprexa", "Manía bipolar y esquizofrenia.", "Bloqueo multirreceptorial.", "Síndrome metabólico y peso.", "Glaucoma ángulo estrecho.", "Tabaco induce su eliminación.", "Monitoreo metabólico y lipídico.", "Menos de 30 °C luz.", "Semivida 33 h."),
+  D("N07BB01", "Disulfiram", "Antialcohólico", "Aversivo disuasorio etílico.", "250 mg tabletas.", "Antabuse", "Abstinencia alcohólica crónica.", "Inhibe aldehído deshidrogenasa.", "Vómito explosivo con alcohol.", "Cardiopatía grave y consumo licor.", "Metronidazol genera efecto similar.", "Evitar vinagres y lociones alcohólicas.", "Menos de 30 °C.", "Semivida 12 h."),
+  D("R03AK06", "Salmeterol + Fluticasona", "LABA + corticoide", "Control crónico bronquial.", "50/250 mcg aerosol.", "Seretide", "Mantenimiento asma y EPOC.", "Beta-2 larga y corticoide.", "Disfonía y muguet bucal.", "Crisis asmática aguda.", "Ritonavir eleva corticoide.", "Enjuague bucal estricto tras uso.", "Menos de 30 °C.", "Acción 12 h.", "cucuta"),
+  D("R06AE07", "Cetirizina", "Antihistamínico 2.ª gen", "Bloqueador selectivo H1.", "10 mg tabletas.", "Zyrtec", "Rinitis y conjuntivitis alérgica.", "Antagonista competitivo H1.", "Somnolencia leve ocasional.", "Falla renal terminal.", "Alcohol deprime reflejos.", "Dosis única preferiblemente nocturna.", "Menos de 30 °C.", "Semivida 9 h."),
+  D("A02BX02", "Sucralfato", "Protector de mucosa", "Complejo sacarosa aluminio.", "1 g tabletas y suspensión.", "Dip", "Úlcera péptica activa.", "Polimeriza formando pasta barrera.", "Constipación.", "Insuficiencia renal terminal.", "Quinolonas pierden absorción.", "Tomar con estómago vacío 1 h antes.", "Menos de 30 °C.", "Acción local."),
+  D("A07EC01", "Sulfasalazina", "Aminosalicilato", "Antiinflamatorio colónico.", "500 mg tabletas.", "Azulfidine", "Colitis ulcerativa y Crohn.", "Libera 5-ASA en colon.", "Cefalea y orina anaranjada.", "Alergia a sulfas o salicilatos.", "Disminuye ácido fólico.", "Suplementar con ácido fólico.", "Menos de 30 °C luz.", "Semivida 8 h."),
+  D("A02BC03", "Lansoprazol", "IBP", "Supresor ácido benzimidazol.", "30 mg cápsulas.", "Ogastro", "Reflujo gastroesofágico.", "Inhibe bomba protones.", "Diarrea y dolor abdominal.", "Hipersensibilidad.", "Reduce absorción de azoles.", "Tomar en ayunas matutina.", "Menos de 25 °C.", "Semivida 1.5 h."),
+  D("B01AC22", "Prasugrel", "Antiagregante tienopiridina", "Inhibidor P2Y12 rápido.", "10 mg tabletas.", "Effient", "Post-angioplastia con stent.", "Inhibición irreversible P2Y12.", "Hemorragia mayor severa.", "Antecedente de ACV o AIT.", "AINE elevan sangrado.", "Contraindicado en ACV previo.", "Menos de 30 °C.", "Semivida 7 h."),
+  D("B01AC24", "Ticagrelor", "Antiagregante reversible", "Antagonista directo P2Y12.", "90 mg tabletas.", "Brilinta", "Síndrome coronario agudo.", "Bloqueo alostérico reversible.", "Disnea transitoria y sangrado.", "Hemorragia intracraneal previa.", "Aspirina acompañante máx. 100 mg.", "La disnea suele ser benigna.", "Menos de 30 °C.", "Semivida 8 h."),
+  D("B02BX05", "Eltrombopag", "Agonista trombopoyetina", "Estimulador megacariocitos.", "50 mg tabletas.", "Revolade", "Púrpura trombocitopénica.", "Activa receptor c-Mpl.", "Hepatotoxicidad y cefalea.", "Insuficiencia hepática grave.", "Calcio y antiácidos lo quelan.", "Separar 4 horas de lácteos.", "Menos de 30 °C.", "Semivida 30 h."),
+  D("C07AB07", "Bisoprolol", "Betabloqueador beta-1", "Cardioselectivo insuficiencia.", "5 mg tabletas.", "Concor", "Insuficiencia cardíaca estable.", "Bloqueo adrenérgico beta-1.", "Bradicardia y fatiga.", "Falla cardíaca descompensada.", "Verapamilo deprime corazón.", "Dosis única matutina.", "Menos de 30 °C.", "Semivida 11 h."),
+  D("C07AG01", "Labetalol", "Bloqueador alfa/beta", "Antihipertensivo obstétrico.", "200 mg tabletas y 100 mg ampolla.", "Trandate", "Preeclampsia y crisis.", "Bloquea alfa-1 y beta total.", "Hipotensión ortostática y bradicardia.", "Asma bronquial y bloqueo AV.", "Calcioantagonistas suman bradicardia.", "Fármaco de elección en preeclampsia.", "Menos de 30 °C luz.", "Semivida 6 h."),
+  D("C09DA01", "Losartán + HCTZ", "ARA-II + diurético", "Sinergia antihipertensiva.", "50/12.5 mg tabletas.", "Hyzaar", "Hipertensión no controlada.", "Bloqueo AT1 y vaciado salino.", "Hipotensión e hiperuricemia.", "Embarazo y anuria.", "AINE reducen efecto.", "Tomar en la mañana.", "Menos de 30 °C.", "Renal/Biliar."),
+  D("C09AA04", "Perindopril", "IECA tisular", "Inhibidor ECA de larga acción.", "5 y 10 mg tabletas.", "Coversyl", "Enfermedad coronaria estable.", "Profármaco perindoprilato.", "Tos seca persistente.", "Embarazo y angioedema.", "Potasio eleva hiperpotasemia.", "Tomar antes del desayuno.", "Menos de 30 °C.", "Semivida 17 h."),
+  D("C09CA04", "Irbesartán", "ARA-II nefroprotector", "Bloqueador AT1 prolongado.", "150 y 300 mg tabletas.", "Aprovel", "Nefropatía diabética tipo 2.", "Antagonismo competitivo AT1.", "Mareo e hiperpotasemia.", "Embarazo.", "Espironolactona suma potasio.", "Protección renal demostrada.", "Menos de 30 °C.", "Semivida 13 h."),
+  D("C09CA08", "Olmesartán", "ARA-II", "Hipotensor de alta afinidad.", "20 y 40 mg tabletas.", "Benicar", "Hipertensión arterial esencial.", "Bloqueo selectivo AT1.", "Enteropatía celíaca rara.", "Embarazo.", "Aliskireno en diabéticos.", "Suspender ante diarrea severa.", "Menos de 30 °C.", "Semivida 13 h."),
+  D("C08CA02", "Felodipino", "Dihidropiridina", "Vasodilatador arterial puro.", "5 mg tabletas retard.", "Plendil", "Hipertensión esencial.", "Bloqueo canales calcio lentos.", "Edema maleolar y rubor.", "Choque e infarto reciente.", "Jugo toronja eleva toxicidad.", "Tragar entera sin masticar.", "Menos de 30 °C.", "Semivida 24 h."),
+  D("C01AA08", "Metildigoxina", "Glucósido cardíaco", "Inotrópico de alta absorción.", "0.1 mg tabletas.", "Lanitop", "Insuficiencia cardíaca.", "Inhibe bomba Na/K miocardio.", "Arritmias y xantopsia.", "Fibrilación ventricular.", "Hipopotasemia dispara arritmias.", "Revisar pulso antes de tomar.", "Menos de 30 °C luz.", "Semivida 40 h."),
+  D("C01EB10", "Adenosina", "Nucleósido AV", "Reversor taquicardia nodal.", "6 mg/2 mL vial IV.", "Adenocard", "Taquicardia paroxística supraventricular.", "Bloqueo transitorio nodo AV.", "Asistolia breve y disnea.", "Bloqueo AV y asma.", "Metilxantinas bloquean efecto.", "Bolo IV ultra-rápido en 2 segundos.", "Menos de 30 °C.", "Semivida < 10 s."),
+  D("C01EB18", "Ranolazina", "Antianginoso metabólico", "Modulador corriente de sodio.", "500 mg tabletas retard.", "Ranexa", "Angina crónica estable.", "Inhibe corriente tardía sodio.", "Mareo y QT largo.", "Falla renal o hepática.", "CYP3A4 altera niveles.", "No alivia crisis agudas.", "Menos de 30 °C.", "Semivida 7 h."),
+  D("C02DB02", "Hidralazina", "Vasodilatador directo", "Relajante arteriolar.", "25 mg tabletas y 20 mg ampolla.", "Apresolina", "Preeclampsia severa.", "Abre canales K musculares.", "Taquicardia y lupus medicamentoso.", "Lupus y taquicardia severa.", "Betabloqueantes frenan taquicardia.", "Vigilar dolor articular lúpico.", "Menos de 30 °C luz.", "Semivida 3 h."),
+  D("C02CA04", "Doxazosina", "Bloqueador alfa-1", "Relajante vascular y vesical.", "2 y 4 mg tabletas.", "Cardura", "Hiperplasia prostática e hipertensión.", "Bloquea alfa-1 periférico.", "Hipotensión ortostática primera toma.", "Hipotensión previa.", "Sildenafilo suma colapso.", "Tomar acostado la primera dosis.", "Menos de 30 °C.", "Semivida 22 h."),
+  D("H02AB06", "Prednisolona", "Glucocorticoide activo", "Antiinflamatorio pediátrico.", "5 mg tabletas y solución.", "Fisopred", "Crisis asmática infantil.", "Activa receptor glucocorticoide.", "Hiperglucemia y apetito.", "Micosis sistémica activa.", "AINE elevan úlceras.", "Tomar en la mañana.", "Menos de 30 °C.", "Semivida 3 h."),
+  D("H02AA02", "Fludrocortisona", "Mineralocorticoide", "Retenedor salino de reemplazo.", "0.1 mg tabletas.", "Florinef", "Enfermedad de Addison.", "Reabsorbe sodio tubular.", "Hipertensión e hipopotasemia.", "Insuficiencia cardíaca.", "Furosemida deprime potasio.", "Vigilar electrolitos y presión.", "2-8 °C refrigerada.", "Semivida 24 h.", "frio"),
+  D("J01DD01", "Cefotaxima", "Cefalosporina 3.ª gen", "Betalactámico neonatal seguro.", "1 g vial inyectable.", "Claforan", "Meningitis y sepsis neonatal.", "Inhibe pared bacteriana.", "Diarrea y flebitis.", "Alergia a cefalosporinas.", "Aminoglucósidos suman lesión.", "De elección en neonatos con ictericia.", "Menos de 25 °C luz.", "Semivida 1 h.", "atb"),
+  D("J01DD08", "Cefixima", "Cefalosporina 3.ª oral", "Bactericida entérico.", "400 mg cápsulas.", "Denvar", "Infección urinaria y gonorrea.", "Inhibe transpeptidación pared.", "Diarrea y náuseas.", "Alergia a betalactámicos.", "Eleva carbamazepina.", "Dosis única diaria de 400 mg.", "Menos de 30 °C.", "Semivida 4 h.", "atb"),
+  D("J01DD12", "Cefoperazona + Sulbactam", "Cefalosporina biliar", "Antipseudomónico de excreción biliar.", "1 g / 1 g vial IV.", "Sulperazon", "Colangitis y sepsis abdominal.", "Inhibe pared y betalactamasas.", "Sangrado y diarrea.", "Coagulopatía severa.", "Efecto disulfiram con alcohol.", "Segura en falla renal por salida biliar.", "Menos de 25 °C luz.", "Semivida 2 h.", "atb"),
+  D("J01CR01", "Ampicilina + Sulbactam", "Aminopenicilina protegida", "Bactericida mixto.", "1.5 g vial inyectable.", "Unasyn", "Neumonía aspirativa y pie diabético.", "Inhibe pared bacteriana.", "Diarrea y flebitis.", "Ictericia previa por penicilinas.", "Alopurinol causa rash.", "Infundir en 20-30 minutos.", "Menos de 25 °C.", "Semivida 1 h.", "atb"),
+  D("J01DH03", "Ertapenem", "Carbapenémico diario", "Carbapenémico ambulatorio.", "1 g vial inyectable.", "Invanz", "Pie diabético e infección pélvica.", "Inhibe síntesis pared.", "Cefalea y flebitis.", "Alergia a carbapenémicos.", "Anula ácido valproico.", "No cubre Pseudomonas; dosis cada 24 h.", "Menos de 25 °C.", "Semivida 4 h.", "atb"),
+  D("J01GB01", "Tobramicina", "Aminoglucósido inhalado/IV", "Antipseudomónico pulmonar.", "80 mg ampolla y solución.", "Tobrex", "Fibrosis quística y bacteriemias.", "Bloquea lectura ribosomal 30S.", "Nefrotoxicidad y ototoxicidad.", "Miastenia gravis.", "Furosemida suma toxicidad acústica.", "Monitorear niveles en sangre.", "Menos de 30 °C.", "Semivida 2 h.", "atb"),
+  D("J01XD03", "Tinidazol", "Nitroimidazol largo", "Antiprotozoario y anaerobios.", "1 g tabletas.", "Fasigyn", "Giardiasis y amebiasis.", "Rompe cadenas ADN.", "Sabor metálico y náusea.", "Primer trimestre y alcohol.", "Reacción disulfiram severa con licor.", "Cero alcohol hasta 72 h post-toma.", "Menos de 30 °C.", "Semivida 13 h.", "atb"),
+  D("J02AX04", "Caspofungina", "Equinocandina", "Inhibidor pared fúngica.", "50 y 70 mg vial IV.", "Cancidas", "Candidiasis invasiva y aspergilosis.", "Inhibe beta-(1,3)-D-glucano sintasa.", "Fiebre y rubor por histamina.", "Hipersensibilidad.", "Ciclosporina eleva enzimas hepáticas.", "Requiere refrigeración obligatoria.", "2-8 °C refrigerada.", "Semivida 10 h.", "frio"),
+  D("J02AX05", "Micafungina", "Equinocandina", "Antifúngico hospitalario seguro.", "100 mg vial IV.", "Mycamine", "Candidemia y candidiasis esofágica.", "Bloquea síntesis pared glucano.", "Flebitis y náusea leve.", "Hipersensibilidad.", "Mínimas interacciones hepáticas.", "Proteger bolsa de la luz durante paso.", "Menos de 30 °C luz.", "Semivida 15 h."),
+  D("J05AE03", "Ritonavir", "Potenciador IP", "Booster metabólico.", "100 mg tabletas.", "Norvir", "Potenciador antirretroviral.", "Inhibidor irreversible CYP3A4.", "Diarrea, vómito y lípidos.", "Uso con simvastatina.", "Inhibe masivamente citocromo CYP3A4.", "Tomar siempre con alimentos.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("J05AR03", "Tenofovir + Emtricitabina", "ITRN combinado", "Terapia VIH y PrEP.", "300/200 mg tabletas.", "Truvada", "VIH y profilaxis PrEP.", "Termina cadena proviral ADN.", "Nefrotoxicidad tubular y hueso.", "Falla renal TFG < 30.", "Nefrotóxicos suman daño renal.", "Vigilar creatinina y orina periódica.", "Menos de 30 °C seco.", "Semivida 17 h."),
+  D("M01AC06", "Meloxicam", "AINE oxicam", "Antiinflamatorio de larga acción.", "15 mg tabletas.", "Mobic", "Osteoartritis y artritis.", "Inhibición preferencial COX-2.", "Dispepsia y edema.", "Úlcera péptica activa.", "Anticoagulantes elevan sangrado.", "Dosis única diaria de 15 mg.", "Menos de 30 °C.", "Semivida 20 h."),
+  D("M01AH05", "Etoricoxib", "Coxib selectivo", "Antiinflamatorio agudo potente.", "90 y 120 mg tabletas.", "Arcoxia", "Gota aguda y dolor dental.", "Inhibición selectiva COX-2.", "Hipertensión arterial y cefalea.", "Hipertensión severa descontrolada.", "Eleva etinilestradiol en sangre.", "Monitorear presión a las 2 semanas.", "Menos de 30 °C.", "Semivida 22 h."),
+  D("M01AX05", "Glucosamina + Condroitina", "Condroprotector", "Nutriente cartílago articular.", "1500/1200 mg sobres.", "Dona", "Artrosis de rodilla leve.", "Estimula proteoglucanos articulares.", "Meteorismo y náuseas.", "Alergia a mariscos (crustáceos).", "Puede potenciar warfarina.", "Efecto visible tras 6-8 semanas.", "Menos de 30 °C.", "Acción articular."),
+  D("M03BA02", "Carisoprodol", "Relajante central", "Espasmolítico muscular sedante.", "350 mg tabletas.", "Mio-Relax", "Contracturas musculares agudas.", "Deprime reflejos tronco cerebral.", "Sedación profunda y adicción.", "Porfiria e hipersensibilidad.", "Alcohol multiplica paro respiratorio.", "No exceder 2 semanas por adicción.", "Menos de 30 °C.", "Semivida 8 h."),
+  D("N05BA09", "Clobazam", "Benzodiacepina 1,5", "Antiepiléptico coadyuvante FNE.", "10 y 20 mg tabletas.", "Urbadan", "Lennox-Gastaut y epilepsia.", "Modulador GABA-A.", "Somnolencia diurna y fatiga.", "Insuficiencia respiratoria.", "Alcohol deprime respiración.", "Control especial FNE. Retiro lento.", "Bajo llave.", "Semivida 40 h.", "fne"),
+  D("N05CD08", "Midazolam", "Benzodiacepina ultra-corta", "Inductor sedante inyectable.", "5 y 15 mg ampollas.", "Dormicum", "Sedación en procedimientos y UCI.", "Abre canal cloro por GABA.", "Apnea, paro respiratorio y amnesia.", "Choque e insuficiencia respiratoria.", "Opioides suman paro respiratorio.", "Control especial FNE. Antídoto: Flumazenilo.", "Bajo llave.", "Semivida 2 h.", "fne"),
+  D("N06AX16", "Venlafaxina", "IRSN", "Antidepresivo dual serotonina/NA.", "75 y 150 mg cápsulas.", "Efexor XR", "Depresión mayor y dolor.", "Bloquea SERT y NET.", "Náuseas e hipertensión diastólica.", "Coadministración con IMAO.", "Tramadol genera síndrome serotoninérgico.", "Monitorear presión arterial basal.", "Menos de 30 °C seco.", "Semivida 11 h."),
+  D("N06AX21", "Duloxetina", "IRSN dual", "Inhibidor dual dolor neuropático.", "30 y 60 mg cápsulas.", "Cymbalta", "Neuropatía diabética y depresión.", "Bloqueo central serotonina y NA.", "Boca seca, náusea y constipación.", "Hepatopatía grave y glaucoma.", "Ciprofloxacino duplica su nivel.", "Tragar entera sin abrir microgránulos.", "Menos de 30 °C.", "Semivida 12 h."),
+  D("N02CC01", "Sumatriptán", "Triptán 5-HT1B/1D", "Vasoconstrictor meníngeo agudo.", "50 y 100 mg tabletas.", "Imigran", "Ataque agudo de migraña.", "Agonista 5-HT1B/1D vascular.", "Opresión torácica y parestesias.", "Cardiopatía isquémica e infarto.", "Ergotamina en 24 h causa vasoespasmo.", "Tomar lo antes posible en la crisis.", "Menos de 30 °C luz.", "Semivida 2 h."),
+  D("N04BC04", "Ropinirol", "Agonista D2/D3", "Antiparkinsoniano no ergolínico.", "2 y 4 mg tabletas retard.", "Requip", "Parkinson y piernas inquietas.", "Estimula receptores dopamina estriado.", "Ataques repentinos de sueño y náuseas.", "Falla hepática terminal.", "Tabaco reduce su concentración.", "Cuidado al conducir: sueño súbito.", "Menos de 30 °C.", "Semivida 6 h."),
+  D("R03AK07", "Formoterol + Budesonida", "LABA + corticoide", "Broncodilatación y desinflamación.", "4.5/160 mcg inhalador.", "Symbicort", "Mantenimiento y rescate SMART asma.", "Agonista beta-2 rápido 12 h y corticoide.", "Candidiasis orofaríngea y palpitaciones.", "Alergia a proteínas de leche.", "Inhibidores CYP3A4 elevan corticoide.", "Enjuague bucal estricto tras uso.", "Menos de 30 °C seco.", "Acción 12 h.", "cucuta"),
+  D("R03AL02", "Salbutamol + Ipratropio", "SABA + anticolinérgico", "Broncodilatador doble rescate.", "100/20 mcg aerosol.", "Combivent", "Crisis asmática y EPOC agudo.", "Relajación simpática y bloqueo colinérgico.", "Boca seca, temblor y taquicardia.", "Glaucoma ángulo estrecho.", "Otras aminas suman taquicardia.", "Evitar contacto con los ojos.", "Menos de 30 °C.", "Acción 4-6 h."),
+  D("A02BC04", "Rabeprazol", "IBP rápido", "Supresor ácido de rápida activación.", "20 mg tabletas.", "Pariet", "Úlcera duodenal y ERGE.", "Inhibición bomba H/K ATPasa.", "Cefalea y astenia.", "Embarazo.", "Metabolismo no enzimático parcial.", "Tragar entera sin masticar.", "Menos de 25 °C luz.", "Semivida 1.5 h."),
+  D("A03AA04", "Mebeverina", "Espasmolítico colónico", "Relajante musculotrópico intestinal.", "200 mg cápsulas.", "Duspatalin", "Síndrome intestino irritable.", "Bloquea canales sodio en miocitos.", "Urticaria y mareo leve.", "Íleo paralítico.", "Sin interacciones anticolinérgicas.", "Tomar 20 min antes de comidas.", "Menos de 30 °C.", "Acción colónica."),
+  D("A07AA02", "Nistatina oral", "Polieno tópico", "Antimicótico de mucosas.", "100.000 UI/mL suspensión.", "Micostatin", "Muguet oral y candidiasis intestinal.", "Forma poros en pared de ergosterol.", "Náuseas y vómito leve.", "Hipersensibilidad.", "Sin absorción sistémica.", "Retener en la boca antes de tragar.", "Menos de 25 °C luz.", "No absorbible."),
+  D("A06AD65", "Macrogol", "Laxante PEG", "Polímero isoosmolar inerte.", "Sobres con electrolitos.", "Movicol", "Constipación crónica rebelde.", "Retiene agua en heces por hidrógeno.", "Distensión y borborigmos.", "Perforación u obstrucción intestinal.", "Espaciar 1 h de otros fármacos.", "Disolver en agua potable completa.", "Menos de 30 °C seco.", "Fecal 100%."),
+  D("B01AC05", "Ticlopidina", "Tienopiridina", "Inhibidor plaquetario clásico.", "250 mg tabletas.", "Tiklid", "Prevención ACV en intolerantes.", "Inhibe unión de ADP a P2Y12.", "Agranulocitosis y PTT.", "Hepatopatía y neutropenia previa.", "Eleva fenitoína por CYP2C19.", "Exige hemogramas quincenales al inicio.", "Menos de 30 °C.", "Semivida 30 h."),
+  D("B02BX01", "Etamsilato", "Hemostático capilar", "Restaurador endotelio capilar.", "500 mg tabletas y 250 mg ampolla.", "Dicynone", "Metrorragia y sangrado capilar.", "Aumenta adhesividad de plaquetas.", "Cefalea e hipotensión con IV rápida.", "Porfiria aguda.", "Ninguna relevante.", "No altera los tiempos de coagulación.", "Menos de 30 °C luz.", "Semivida 2 h."),
+  D("B03AC02", "Hierro sacarosa", "Hierro parenteral", "Complejo férrico intravenoso.", "100 mg/5 mL ampolla IV.", "Venofer", "Anemia ferropénica en diálisis.", "Libera hierro a transferrina directa.", "Hipotensión con infusión veloz.", "Sobrecarga de hierro.", "No asociar con hierro oral.", "Exclusivo IV lento diluido; NUNCA IM.", "15-25 °C no congelar.", "Semivida 6 h."),
+  D("C01BA01", "Quinidina", "Antiarrítmico Ia", "Depresor sódico y potásico.", "200 mg tabletas.", "Quinidina", "Fibrilación auricular y Brugada.", "Deprime fase 0 y alarga potencial.", "Cinconismo (tinnitus/sordera) y QT.", "Bloqueo AV y QT largo.", "Inhibe CYP2D6 y duplica digoxina.", "Monitoreo con ECG por ensanchamiento QRS.", "Menos de 30 °C luz.", "Semivida 7 h."),
+  D("C01BD07", "Dronedarona", "Antiarrítmico no yodado", "Análogo sin yodo de amiodarona.", "400 mg tabletas.", "Multaq", "Mantenimiento ritmo en FA no permanente.", "Bloquea canales K, Na y Ca.", "Hepatotoxicidad y falla cardíaca.", "Falla cardíaca III-IV y FA permanente.", "Inhibidores potentes CYP3A4.", "Monitorear transaminasas mensuales.", "Menos de 30 °C.", "Semivida 28 h."),
+  D("C01DA14", "Isosorbida mononitrato", "Nitrato activo", "Metabolito directo sin primer paso.", "20 y 40 mg tabletas.", "Monoket", "Prevención crónica de angina.", "Venodilatación mediada por GMPc.", "Cefalea pulsátil e hipotensión.", "Choque e inhibidores de PDE5.", "Sildenafilo causa colapso mortal.", "Régimen asimétrico para evitar tolerancia.", "Menos de 30 °C seco.", "Semivida 5 h."),
+  D("C02DB04", "Nitroprusiato de sodio", "Vasodilatador mixto", "Hipotensor intravenoso ultra-veloz.", "50 mg vial IV.", "Nipride", "Emergencia hipertensiva y disección.", "Libera óxido nítrico directo.", "Hipotensión severa y tiocianato tóxico.", "Falla renal o hepática terminal.", "Potencia todos los hipotensores.", "Fotosensible: envolver en aluminio.", "Menos de 30 °C cubierto.", "Semivida 2 min."),
+  D("C03BA08", "Metolazona", "Diurético quinazolina", "Eficaz en falla renal avanzada.", "5 mg tabletas.", "Zaroxolyn", "Edema refractario con TFG baja.", "Inhibe reabsorción sodio túbulo distal.", "Hipopotasemia profunda y volumen bajo.", "Anuria y coma hepático.", "Sinergia masiva con furosemida.", "Rompe resistencia a diuréticos en UCI.", "Menos de 30 °C.", "Semivida 14 h."),
+  D("C03CA04", "Torasemida", "Diurético de asa largo", "Diurético con absorción estable.", "10 mg tabletas.", "Dilutrend", "Falla cardíaca y cirrosis edematosa.", "Bloquea Na/K/2Cl en asa gruesa.", "Hipopotasemia y deshidratación.", "Anuria e hipotensión.", "Aminoglucósidos suman ototoxicidad.", "Absorción no afectada por edema intestinal.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("C07AA07", "Sotalol", "Antiarrítmico mixto", "Betabloqueador clase III.", "160 mg tabletas.", "Betapace", "Taquicardias ventriculares y FA.", "Bloqueo potasio y beta total.", "Torsade de pointes por QT y bradicardia.", "QT largo previo y asma.", "Fármacos proarrítmicos suman paro.", "Medir intervalo QTc en cada ajuste.", "Menos de 30 °C.", "Semivida 12 h."),
+  D("C08CA06", "Nimodipino", "Calcioantagonista cerebral", "Dihidropiridina neurovascular.", "30 mg tabletas y frasco IV.", "Nimotop", "Vasoespasmo post-hemorragia cerebral.", "Bloqueo selectivo calcio cerebral.", "Hipotensión y cefalea.", "Uso de rifampicina inductores.", "Inhibidores CYP3A4 bajan presión.", "Esquema riguroso cada 4 h por 21 días.", "Menos de 30 °C luz.", "Semivida 2 h."),
+  D("C08CA09", "Lercanidipino", "Dihidropiridina 3.ª gen", "Vasodilatador de bajo edema.", "10 y 20 mg tabletas.", "Zanidip", "Hipertensión esencial.", "Bloqueo gradual canales de calcio.", "Rubor, cefalea y mareo.", "Angina inestable y falla cardíaca.", "Jugo de toronja eleva nivel.", "Tomar 15 minutos antes del desayuno.", "Menos de 30 °C luz.", "Semivida 9 h."),
+  D("C08CA13", "Lacidipino", "Calcioantagonista lipófilo", "Hipotensor de membrana duradera.", "4 mg tabletas.", "Lacipil", "Hipertensión arterial esencial.", "Bloquea calcio vascular periférico.", "Cefalea y palpitaciones.", "Estenosis aórtica severa.", "Cimetidina eleva concentraciones.", "Tragar entera sin fraccionar.", "Menos de 30 °C seco.", "Semivida 15 h."),
+  D("C08CA11", "Manidipino", "Dihidropiridina renal", "Protector de microcirculación renal.", "10 y 20 mg tabletas.", "Muchic", "Hipertensión con proteinuria.", "Dilata arteriola aferente y eferente.", "Edema maleolar mínimo y mareo.", "Falla renal severa TFG < 10.", "Metabolismo CYP3A4 hepático.", "Disminuye presión intraglomerular.", "Menos de 30 °C.", "Semivida 6 h."),
+  D("C10AA03", "Pravastatina", "Estatina hidrofílica", "Lipidroprotector sin CYP3A4.", "20 y 40 mg tabletas.", "Pravacol", "Dislipidemia en polimedicados.", "Inhibe síntesis hepática colesterol.", "Mialgias leves y transaminasas.", "Hepatopatía activa.", "No interactúa con macrólidos.", "De elección en VIH por nula interacción.", "Menos de 30 °C luz.", "Semivida 2 h."),
+  D("C10AA07", "Rosuvastatina", "Estatina potente", "Hipolipemiante máxima eficacia.", "10 y 20 mg tabletas.", "Crestor", "Hipercolesterolemia severa y riesgo alto.", "Inhibición prolongada HMG-CoA.", "Mialgias y proteinuria tubular.", "Hepatopatía y embarazo.", "Gemfibrozilo eleva rabdomiólisis.", "Tomar a cualquier hora del día.", "Menos de 30 °C.", "Semivida 19 h."),
+  D("H01CB02", "Octreotida", "Análogo somatostatina", "Frenador esplácnico inyectable.", "0.1 mg/mL ampolla.", "Sandostatin", "Várices esofágicas sangrantes.", "Vasoconstricción lecho esplácnico.", "Dolor abdominal y colelitiasis.", "Hipersensibilidad.", "Disminuye ciclosporina.", "Refrigerar en caja protectora.", "2-8 °C refrigerada.", "Semivida 1.5 h.", "frio"),
+  D("H01BA02", "Desmopresina", "Análogo vasopresina", "Antidiurético puro V2.", "0.1 mg tabletas y spray.", "Minirin", "Diabetes insípida y enuresis.", "Reabsorbe agua en túbulo colector.", "Hiponatremia por retención agua.", "Polidipsia psicógena y falla cardíaca.", "Carbamazepina agrava hiponatremia.", "Limitar ingesta de agua antes de tomar.", "Menos de 25 °C.", "Semivida 3 h."),
+  D("J01DB07", "Cefatrizina", "Cefalosporina oral 1.ª", "Bactericida grampositivo.", "500 mg cápsulas.", "Cefatrizina", "Faringitis y celulitis leve.", "Inhibe pared bacteriana.", "Diarrea y erupción.", "Alergia a betalactámicos.", "Probenecid retarda excreción.", "Cumplir horario estricto.", "Menos de 30 °C.", "Semivida 1.5 h.", "atb"),
+  D("J01DC04", "Cefaclor", "Cefalosporina 2.ª oral", "Betalactámico contra Haemophilus.", "500 mg cápsulas.", "Ceclor", "Otitis media recurrente.", "Bloquea síntesis pared bacteriana.", "Reacción tipo enfermedad del suero.", "Alergia a cefalosporinas.", "Antiácidos bajan absorción.", "Suspender ante dolor articular.", "Menos de 25 °C.", "Semivida 1 h.", "cucuta atb"),
+  D("J01DD07", "Ceftizoxima", "Cefalosporina 3.ª IV", "Resistente a betalactamasas.", "1 g vial inyectable.", "Cefizox", "Infección intraabdominal y pélvica.", "Inhibe transpeptidación pared.", "Flebitis y leucopenia.", "Alergia a cefalosporinas.", "Aminoglucósidos elevan nefrotoxicidad.", "Ajustar dosis en daño renal.", "Menos de 25 °C luz.", "Semivida 1.7 h.", "atb"),
+  D("J01DH04", "Doripenem", "Carbapenémico IV", "Antipseudomónico hospitalario.", "500 mg vial IV.", "Doribax", "Infección intraabdominal compleja.", "Inactiva PBP 1, 2 y 3.", "Cefalea, diarrea y flebitis.", "Alergia a betalactámicos.", "Anula niveles de valproato sódico.", "Infundir en 1 hora o extendida en 4 h.", "Menos de 30 °C.", "Semivida 1 h.", "atb"),
+  D("J01FA01", "Eritromicina", "Macrólido pionero", "Bacteriostático de motilidad.", "500 mg tabletas.", "Pantomicina", "Difteria y alérgicos a penicilina.", "Se une reversiblemente a 50S.", "Cólicos gástricos y QT largo.", "Uso de cisaprida o terfenadina.", "Inhibe potentemente CYP3A4.", "Estimula motilina: cólicos comunes.", "Menos de 30 °C seco.", "Semivida 1.5 h.", "atb"),
+  D("J01FA02", "Espiramicina", "Macrólido tisular", "Fármaco anti-toxoplasma.", "3 M UI tabletas.", "Rovamycine", "Toxoplasmosis gestacional.", "Inhibe síntesis proteica 50S.", "Náusea y dispepsia.", "Hipersensibilidad a macrólidos.", "Menor interacción con CYP450.", "Previene paso del parásito al feto.", "Menos de 25 °C seco.", "Semivida 8 h.", "atb"),
+  D("J01GB07", "Netilmicina", "Aminoglucósido semisintético", "Resistente a enzimas bacterianas.", "150 mg ampolla.", "Netromicina", "Sepsis por gramnegativos.", "Lectura errónea ribosomal 30S.", "Nefrotoxicidad y sordera.", "Miastenia gravis y embarazo.", "Furosemida multiplica daño acústico.", "Dosis única diaria ajustada por peso.", "Menos de 30 °C.", "Semivida 2.5 h.", "atb"),
+  D("J01MA06", "Norfloxacino", "Fluoroquinolona urinaria", "Bactericida concentrado en vejiga.", "400 mg tabletas.", "Noroxin", "Cistitis complicada y diarrea del viajero.", "Inhibe ADN girasa bacteriana.", "Tendinitis y náuseas.", "Menores de 18 años y gestación.", "Hierro y calcio anulan absorción.", "Beber abundante agua; alejar lácteos.", "Menos de 30 °C.", "Semivida 4 h.", "atb"),
+  D("J01MA14", "Moxifloxacino", "Quinolona respiratoria", "Bactericida tisular amplio.", "400 mg tabletas y bolsa IV.", "Avelox", "Neumonía comunitaria severa.", "Inhibe ADN girasa y topo IV.", "Prolongación franca del intervalo QT.", "QT largo y antiarrítmicos IA/III.", "Fármacos proarrítmicos suman paro.", "No se excreta en orina: NO en cistitis.", "Menos de 25 °C.", "Semivida 12 h.", "atb"),
+  D("J01XA02", "Teicoplanina", "Glucopéptido IM/IV", "Antiestafilococo multirresistente.", "400 mg vial liofilizado.", "Targocid", "Osteomielitis por SARM.", "Se une a D-Ala-D-Ala en peptidoglucano.", "Erupción y nefrotoxicidad menor.", "Hipersensibilidad.", "Aminoglucósidos suman lesión renal.", "Permite administración IM profunda.", "Menos de 25 °C.", "Semivida 120 h.", "atb"),
+  D("J01XB01", "Colistina", "Polimixina de rescate", "Detergente bacteriano catiónico.", "1 M UI vial inyectable.", "Colistimetato", "Bacterias panresistentes (KPC).", "Desorganiza membrana celular externa.", "Nefrotoxicidad severa y apnea.", "Miastenia gravis.", "Curarizantes aumentan parálisis.", "Monitorear función renal diariamente.", "Menos de 25 °C luz.", "Semivida 4 h.", "atb"),
+  D("J02AC03", "Voriconazol", "Triazol aspergilosis", "Antifúngico invasivo primera línea.", "200 mg tabletas y vial IV.", "Vfend", "Aspergilosis pulmonar invasiva.", "Bloquea 14-alfa desmetilasa fúngica.", "Alteraciones visuales (fotopsias).", "Uso con rifampicina o carbamazepina.", "Inhibe CYP2C19, CYP2C9 y CYP3A4.", "Las fotopsias remiten en 30 minutos.", "Menos de 30 °C.", "Semivida 6 h."),
+  D("J05AB14", "Valaciclovir", "Profármaco aciclovir", "L-valil éster oral de alta absorción.", "500 mg tabletas.", "Valtrex", "Herpes zóster y genital.", "Se hidroliza a aciclovir activo.", "Cefalea y neurotoxicidad en ancianos.", "Alergia a aciclovir.", "Nefrotóxicos elevan acumulación.", "Abundante hidratación oral obligatoria.", "Menos de 30 °C.", "Semivida 3 h."),
+  D("J05AB11", "Ganciclovir", "Antiviral CMV", "Inhibidor de citomegalovirus.", "500 mg vial IV.", "Cymevene", "Retinitis por CMV en inmunosuprimidos.", "Trifosfato bloquea ADN polimerasa.", "Neutropenia severa y anemia.", "Neutrófilos menores a 500/mm3.", "Zidovudina dispara mielotoxicidad.", "Hemograma de control cada 48 horas.", "Menos de 30 °C.", "Semivida 4 h."),
+  D("M01CC01", "Penicilamina", "Quelante metales", "Eliminador de cobre excedente.", "250 mg cápsulas.", "Cuprimine", "Enfermedad de Wilson y cistinuria.", "Quelación de cobre y excreción urinaria.", "Proteinuria y mielosupresión.", "Falla renal previa y lupus.", "Hierro y antiácidos bajan absorción.", "Tomar en ayunas; suplementar B6.", "Menos de 25 °C.", "Semivida 2 h."),
+  D("M04AB01", "Probenecid", "Uricosúrico tubular", "Bloqueador transportador URAT-1.", "500 mg tabletas.", "Benemid", "Hiperuricemia y sinergia penicilinas.", "Inhibe reabsorción ácido úrico en riñón.", "Cólico renal por litiasis y gota aguda.", "Crisis aguda de gota y litiasis.", "Aspirina baja anula su uricosuria.", "Beber mínimo 2 litros de agua al día.", "Menos de 30 °C.", "Semivida 8 h."),
+  D("M05BA06", "Ibandronato", "Bisfosfonato mensual", "Antirresortivo osteoclástico.", "150 mg tabletas.", "Bonviva", "Osteoporosis posmenopáusica.", "Inhibe farnesil pirofosfato sintasa.", "Esofagitis y dolor musculoesquelético.", "Estenosis esofágica e hipocalcemia.", "Calcio y lácteos anulan absorción.", "Ayuno total; erguido 60 minutos.", "Menos de 30 °C.", "Fijación ósea."),
+  D("N03AF02", "Oxcarbazepina", "Anticonvulsivante ceto", "Bloqueador canales de sodio.", "300 y 600 mg tabletas.", "Trileptal", "Epilepsia focal y neuralgia.", "Inactiva canales sodio voltaje.", "Hiponatremia dilucional y mareo.", "Bloqueo auriculoventricular.", "Baja eficacia de anticonceptivos orales.", "Medir sodio sérico ante confusión.", "Menos de 30 °C.", "Semivida 9 h."),
+  D("N05AL01", "Sulpirida", "Benzamida antipsicótica", "Antagonista D2 selectivo.", "50 mg cápsulas.", "Dogmatil", "Trastornos somatomorfos y vértigo.", "Bloqueo dopaminérgico D2 periférico.", "Hiperprolactinemia y galactorrea.", "Feocromocitoma y prolactinoma.", "Antagoniza a la levodopa.", "Vigilar salida de leche en mamas.", "Menos de 30 °C.", "Semivida 8 h."),
+  D("N06AB08", "Fluvoxamina", "ISRS sigma-1", "Inhibidor de recaptación serotonina.", "100 mg tabletas.", "Luvox", "Trastorno obsesivo compulsivo.", "Bloquea SERT y estimula sigma-1.", "Náuseas intensas y somnolencia.", "Coadministración con tizanidina.", "Inhibe fuertemente CYP1A2 y CYP2C19.", "Tomar preferiblemente en la noche.", "Menos de 25 °C luz.", "Semivida 18 h."),
+  D("N06BA04", "Metilfenidato", "Psicoestimulante FNE", "Inhibidor recaptación dopamina/NA.", "10 mg tabletas y cápsulas OROS.", "Ritalina", "TDAH y narcolepsia.", "Aumenta monoaminas en corteza frontal.", "Insomnio, anorexia y taquicardia.", "Glaucoma, arritmias y abuso.", "IMAO causan crisis hipertensiva fatal.", "Control especial FNE; evitar en la noche.", "Bajo llave.", "Semivida 3 h.", "fne")
+];
+
+/* ============================================================
+   CASOS CLÍNICOS (20 CASOS REALES)
+   ============================================================ */
+const C = (id, cat, catName, title, scenario, question, opts, correct, law, summary) =>
+  ({ id, cat, catName, title, scenario, question, opts, correct, law, summary });
+
+const ALL_CASES = [
+  C(1, "fne", "Control especial y normativa", "Fórmula de morfina vencida",
+    "Un usuario se acerca con una fórmula médica oficial del Fondo Nacional de Estupefacientes para retirar 10 ampollas de morfina expedida hace 35 días calendario.",
+    "¿Cuál es la conducta legal correcta del servicio farmacéutico?",
+    [["Dispensar la mitad del tratamiento por razones humanitarias.", "Error: no se admiten entregas parciales ni excepciones con fórmulas vencidas."],
+     ["Rechazar la dispensación e indicar que renueve la prescripción, pues superó los 30 días calendario de vigencia (Res. 1478/2006, Art. 86).", "Correcto: la vigencia máxima legal para fórmulas de control especial en Colombia es de 30 días calendario."],
+     ["Cambiar la morfina por tramadol para calmar el dolor.", "Prohibido: el personal de farmacia no puede sustituir moléculas prescritas."],
+     ["Dispensar y retener la fórmula cobrando una sanción pecuniaria.", "Totalmente ilegal según la normativa sanitaria."]],
+    1, "Resolución 1478 de 2006 (Art. 86)", "Fórmulas de control especial: vigencia máxima nacional de 30 días calendario."),
+  C(2, "cucuta", "Clima cálido y almacenamiento", "34 °C en el área de almacenamiento",
+    "A las 2:00 p. m. en una droguería de Cúcuta falla el aire acondicionado y el termohigrómetro marca 34 °C con 75% de humedad. En la estantería hay viales de insulina cristalina y suspensiones de amoxicilina.",
+    "¿Qué impacto técnico ocurre con estos productos?",
+    [["Soportan hasta 40 °C sin problemas según registro INVIMA estándar.", "Falso: el rótulo garantiza estabilidad solo hasta 30 °C."],
+     ["La insulina se desnaturaliza y el betalactámico se hidroliza perdiendo su efectividad terapéutica.", "Correcto: las proteínas se desnaturalizan con el calor excesivo y los betalactámicos se destruyen."],
+     ["Basta con ponerles una bolsa plástica protectora.", "Ineficaz: el plástico no modifica la temperatura ambiental."],
+     ["No pasa nada si el frasco de vidrio está sellado herméticamente.", "Falso: el calor degrada las moléculas activas."]],
+    1, "Resolución 1403 de 2007", "Cúcuta exige climatización permanente (< 30 °C) y refrigeración (2-8 °C) para termolábiles."),
+  C(3, "contraindicaciones", "Seguridad del paciente", "Ceftriaxona y Lactato de Ringer",
+    "En la sala de urgencias solicitan preparar un gramo de ceftriaxona para administrarlo diluido en una bolsa de Lactato de Ringer por la misma vía venosa.",
+    "¿Cuál es la alerta farmacológica que debe emitirse?",
+    [["Aprobado: el Lactato de Ringer es el diluyente universal de betalactámicos.", "Peligro mortal: incompatibilidad física documentada."],
+     ["Detener la infusión: el ion calcio precipita con la ceftriaxona generando cristales insolubles en pulmón y riñón.", "Correcto: la ceftriaxona nunca debe mezclarse con soluciones que contengan sales de calcio."],
+     ["Calentar la solución a 37 °C para disolver los cristales.", "El calor no previene la precipitación química."],
+     ["Aumentar el goteo a máxima velocidad.", "Aumentaría el riesgo de embolia microcristalina letal."]],
+    1, "Ficha técnica INVIMA y Alertas Sanitarias", "Ceftriaxona + Calcio = Precipitación insoluble fatal. Usar Solución Salina 0.9%."),
+  C(4, "cucuta", "Dengue y analgésicos", "Fiebre y mialgias en brote de dengue",
+    "Una madre solicita ibuprofeno o aspirina para un niño de 9 años con fiebre alta, dolor retroocular y mialgias en Cúcuta.",
+    "¿Cuál es la indicación correcta del personal de farmacia?",
+    [["Entregar ibuprofeno cada 8 horas para desinflamar.", "Error grave: los AINE inhiben plaquetas y elevan riesgo de hemorragia en dengue."],
+     ["No usar AINE ni aspirina: administrar acetaminofén y remitir a valoración médica urgente.", "Correcto: en sospecha de dengue el analgésico antipirético de elección exclusivo es el acetaminofén."],
+     ["Entregar aspirina 500 mg porque baja la fiebre más rápido.", "Contraindicada: riesgo de síndrome de Reye y hemorragias mortales."],
+     ["Vender diclofenaco inyectable intramuscular.", "Contraindicado por riesgo de sangrado y hematomas."]],
+    1, "Guía Nacional de Atención Clínica del Dengue", "En sospecha de dengue: solo acetaminofén; AINE y aspirina totalmente prohibidos."),
+  C(5, "contraindicaciones", "Interacciones medicamentosas", "Linezolid y Sertralina",
+    "Un paciente hospitalizado con neumonía por SARM recibe Linezolid IV 600 mg. En su medicación ambulatoria continua toma Sertralina 100 mg diarios.",
+    "¿Cuál es el riesgo farmacológico?",
+    [["Ninguno, no hay interacción descrita.", "Falso: existe riesgo farmacodinámico grave."],
+     ["Riesgo severo de Síndrome Serotoninérgico: linezolid es un inhibidor de la MAO y potencia la serotonina.", "Correcto: la coadministración puede desencadenar hipertermia, mioclonías, agitación y rigidez."],
+     ["El linezolid bloquea la eliminación renal de la sertralina.", "Falso: no compiten por transporte renal."],
+     ["La sertralina inactiva la pared bacteriana del linezolid.", "Falso: linezolid actúa en la síntesis proteica ribosomal."]],
+    1, "Alertas Farmacológicas INVIMA", "Linezolid + ISRS (sertralina, fluoxetina) = Alerta de Síndrome Serotoninérgico."),
+  C(6, "cucuta", "Inventario y FEFO", "Dos lotes de losartán con distinta fecha",
+    "Recibes dos cajas de losartán 50 mg: lote A vence en 4 meses y lote B en 15 meses.",
+    "¿Cómo se organizan y dispensan según el método FEFO?",
+    [["Ambos en verde y se entrega primero el lote B.", "Error: el lote A se vencería en el anaquel."],
+     ["Lote A con adhesivo ROJO adelante (sale primero); lote B en VERDE atrás.", "Correcto: rojo si vence en ≤ 6 meses; verde si supera los 12 meses."],
+     ["Desechar el lote A por tener menos de 6 meses.", "Falso: el medicamento es totalmente apto, solo debe rotar con prioridad."],
+     ["Mezclarlos sin identificar.", "Contrario a las Buenas Prácticas de Almacenamiento."]],
+    1, "Resolución 1403 de 2007", "FEFO: First Expire, First Out. Lo que vence primero sale primero."),
+  C(7, "indicaciones", "Educación al paciente", "Levotiroxina con café y calcio",
+    "Un paciente toma su tableta de levotiroxina junto con el desayuno de café con leche y una tableta de carbonato de calcio.",
+    "¿Qué recomendación técnica evita el fracaso del tratamiento?",
+    [["Felicitarlo: los lácteos protegen el estómago.", "Falso: los cationes de calcio forman quelatos insolubles con la levotiroxina."],
+     ["Tomarla en ayunas estricta con agua pura, 30 a 60 min antes del desayuno, y separar el calcio 4 horas.", "Correcto: los minerales y el café anulan la absorción gástrica de la tiroxina."],
+     ["Disolver la tableta en el café caliente.", "El calor y el café degradan e impiden la absorción."],
+     ["Tomarla por la noche con la cena.", "La cena interfiere con la absorción intestinal."]],
+    1, "Guías Clínicas de Endocrinología", "Levotiroxina: ayuno estricto con agua pura; alejar 4 horas de sales de calcio y hierro."),
+  C(8, "contraindicaciones", "Interacciones", "Clopidogrel y Omeprazol",
+    "Un paciente con stent coronario recibe clopidogrel 75 mg e introduce omeprazol por su cuenta para la acidez.",
+    "¿Cuál es el problema farmacológico?",
+    [["Ninguno: se potencian de manera beneficiosa.", "Falso."],
+     ["El omeprazol inhibe CYP2C19 y bloquea la activación del clopidogrel, elevando el riesgo de trombosis del stent.", "Correcto: clopidogrel es un profármaco que requiere CYP2C19 para activarse. Se recomienda rotar a pantoprazol."],
+     ["El clopidogrel inactiva el omeprazol.", "Es a la inversa."],
+     ["Provocan hemorragia inmediata en el riñón.", "El riesgo principal es trombótico por falta de activación antiplaquetaria."]],
+    1, "Alertas INVIMA / FDA", "Omeprazol bloquea la bioactivación de clopidogrel vía CYP2C19."),
+  C(9, "contraindicaciones", "Teratogenicidad", "Warfarina y embarazo",
+    "Una mujer con prótesis cardíaca mecánica en tratamiento con warfarina confirma 7 semanas de gestación.",
+    "¿Cuál es la conducta y el riesgo?",
+    [["Continuar igual: la warfarina no cruza la placenta.", "Grave error: cruza placenta y produce embriopatía severa."],
+     ["Remitir urgente a ginecoobstetricia para cambio a heparina de bajo peso molecular (enoxaparina), que no atraviesa la placenta.", "Correcto: la enoxaparina no cruza la barrera placentaria y previene malformaciones esqueléticas."],
+     ["Reducir la dosis de warfarina a 1 mg.", "Ninguna dosis de cumarínico es segura en organogénesis."],
+     ["Cambiar a aspirina 500 mg.", "Insuficiente para proteger una prótesis mecánica y riesgosa."]],
+    1, "Farmacovigilancia y Teratogénesis", "Warfarina está contraindicada en el primer trimestre; enoxaparina no cruza la placenta."),
+  C(10, "mecanismo", "Efecto adverso típico", "Tos seca por Enalapril",
+    "Un hipertenso tratado con enalapril consulta por tos seca irritativa constante sin secreciones ni fiebre.",
+    "¿Cuál es la explicación farmacológica?",
+    [["Infección sobreagregada; dar amoxicilina.", "Error: es un efecto adverso directo del IECA."],
+     ["Los IECA inhiben la degradación de bradicinina y sustancia P en el árbol respiratorio; remitir para cambiar a un ARA-II (losartán).", "Correcto: la acumulación pulmonar de bradicinina provoca tos seca. Los ARA-II no alteran la bradicinina."],
+     ["El enalapril bloquea los receptores AT1.", "Ese es el mecanismo de los ARA-II."],
+     ["Dar jarabe con dextrometorfano y doblar la dosis.", "Los antitusivos no eliminan la tos por bradicinina."]],
+    1, "Farmacología de Katzung", "IECA: tos seca mediada por acumulación de bradicinina. Rotar a ARA-II."),
+  C(11, "indicaciones", "Hipoglucemia", "Glibenclamida y omisión de comidas",
+    "Un adulto mayor diabético tomó glibenclamida pero no desayunó por falta de apetito. Presenta sudoración fría, temblor y confusión.",
+    "¿Qué cuadro presenta y por qué?",
+    [["Hiperglucemia por falta de agua.", "Falso: presenta hipoglucemia."],
+     ["Hipoglucemia inducida por sulfonilurea: estimula la liberación de insulina independientemente de si hay glucosa. Administrar glucosa rápida.", "Correcto: las sulfonilureas son secretagogos continuos y provocan hipoglucemia si se omiten alimentos."],
+     ["Acidosis láctica por metformina.", "El fármaco administrado fue glibenclamida."],
+     ["Efecto secundario benigno sin riesgo.", "La hipoglucemia en ancianos puede causar coma o secuelas neurológicas."]],
+    1, "Guías ADA de Diabetes", "Sulfonilureas: secretagogo no dependiente de glucosa; ayuno = hipoglucemia severa."),
+  C(12, "contraindicaciones", "Interacción alcohol", "Metronidazol y bebidas alcohólicas",
+    "Un paciente en tratamiento con metronidazol para amebiasis pregunta si puede tomar cerveza en una reunión.",
+    "¿Qué debe advertir el personal farmacéutico?",
+    [["Puede tomar cerveza suave sin problema.", "Falso: se presentará efecto antabuse."],
+     ["Prohibido ingerir alcohol durante el tratamiento y hasta 48-72 h después: se inhibe la aldehído deshidrogenasa causando náuseas, vómito, taquicardia y rubor.", "Correcto: reacción tipo disulfiram severa."],
+     ["El alcohol potencia el efecto antibiótico.", "Falso: sólo multiplica los efectos tóxicos."],
+     ["Sólo debe evitar el vino tinto.", "Cualquier bebida con etanol desencadena el efecto."]],
+    1, "Farmacología Clínica", "Metronidazol + Etanol = Efecto tipo disulfiram (acumulación de acetaldehído)."),
+  C(13, "contraindicaciones", "Quelación", "Ciprofloxacino y antiácidos",
+    "Un usuario toma ciprofloxacino para una infección urinaria junto con un antiácido de aluminio y magnesio.",
+    "¿Cuál es la consecuencia técnica?",
+    [["Mejora la digestión del antibiótico.", "Falso."],
+     ["Los cationes metálicos divalentes y trivalentes quelan la fluoroquinolona formando complejos insolubles y reduciendo su absorción a casi cero.", "Correcto: se produce fracaso terapéutico por falta de absorción."],
+     ["El ciprofloxacino destruye el antiácido.", "Inconsecuente."],
+     ["Se produce toxicidad hepática fulminante.", "El problema directo es la pérdida de biodisponibilidad por quelación química."]],
+    1, "Fichas de Interacciones Antimicrobianas", "Fluoroquinolonas: espaciar mínimo 2 horas de lácteos, antiácidos y suplementos minerales."),
+  C(14, "cucuta", "Cadena de frío", "Insulina en transporte intermunicipal",
+    "Un paciente diabético viaja al mediodía desde Cúcuta en un vehículo a más de 35 °C llevando su vial de insulina en una bolsa plástica común.",
+    "¿Qué recomendación técnica debe recibir?",
+    [["Está bien mientras no le dé la luz solar directa.", "Falso: el calor desnaturaliza la hormona proteica."],
+     ["Debe transportarse en termo o cava hermética con geles refrigerantes a 2-8 °C, evitando el contacto directo del vial con el hielo para no congelarla.", "Correcto: la insulina es un producto termolábile biológico."],
+     ["Congelar el vial antes de salir.", "Prohibido: la congelación rompe la estructura proteica y la inutiliza."],
+     ["Envolver el frasco en papel periódico.", "No sustituye un sistema isotérmico calibrado."]],
+    1, "Resolución 1403 de 2007", "Productos termolábiles: transporte obligatorio en cavas isotérmicas entre 2 °C y 8 °C."),
+  C(15, "fne", "Dispensación ilegal", "Venta de clonazepam sin fórmula médica",
+    "Un cliente insiste en comprar un frasco de clonazepam en gotas ofreciendo el doble del valor comercial porque no tuvo tiempo de ir al médico.",
+    "¿Cuál es el deber legal del servicio farmacéutico?",
+    [["Venderlo por ser un cliente habitual.", "Infracción grave que amerita sellamiento del establecimiento."],
+     ["Negar la venta: los medicamentos de control especial solo se dispensan contra entrega de fórmula médica oficial vigente debidamente diligenciada.", "Correcto: la venta sin prescripción médica oficial vulnera la Resolución 1478 de 2006."],
+     ["Entregarle diazepam en su lugar.", "Ambos son medicamentos monopolio y requieren fórmula oficial."],
+     ["Venderle la mitad de las gotas.", "El fraccionamiento de formas líquidas orales está prohibido."]],
+    1, "Resolución 1478 de 2006", "Medicamentos de control especial: dispensación exclusiva bajo fórmula médica oficial retenida."),
+  C(16, "indicaciones", "Farmacotecnia", "Cápsula de omeprazol triturada",
+    "Un cuidador tritura los gránulos de una cápsula de omeprazol para dársela disuelta en agua a un adulto mayor con sonda.",
+    "¿Qué error técnico se cometió?",
+    [["Ninguno: mejora la velocidad de acción.", "Falso: destruye la protección gástrica."],
+     ["Los microgránulos tienen recubrimiento entérico: al triturarlos, el omeprazol queda expuesto al pH ácido gástrico y se destruye antes de absorberse.", "Correcto: la molécula es ácido-lábil y requiere llegar intacta al duodeno."],
+     ["El omeprazol se vuelve tóxico para el hígado.", "El fármaco simplemente se inactiva por hidrólisis ácida."],
+     ["Debe disolverse en jugo de naranja ácido.", "El ácido del jugo lo destruirá con mayor rapidez."]],
+    1, "Tecnología Farmacéutica", "Formas con recubrimiento entérico: nunca deben ser trituradas ni masticadas."),
+  C(17, "cucuta", "Cadena de frío y apagón", "Corte eléctrico prolongado en la farmacia",
+    "Se registra un corte de energía eléctrica en Cúcuta de 6 horas a 33 °C. En la nevera hay viales de oxitocina, insulina y vacunas.",
+    "¿Qué acción prioritaria de contingencia debe activarse?",
+    [["Abrir la puerta periódicamente para que circule aire.", "Grave error: disipa el aire frío remanente acelerando el calentamiento."],
+     ["Trasladar de inmediato los productos termolábiles a cavas isotérmicas con paquetes fríos a 2-8 °C y verificar termómetro calibrado.", "Correcto: plan de contingencia obligatorio de cadena de frío."],
+     ["Pasar los frascos al congelador de emergencia.", "Prohibido: la congelación destruye las proteínas biológicas."],
+     ["Esperar el restablecimiento del servicio.", "Se perdería la estabilidad microbiológica y fisicoquímica."]],
+    1, "Resolución 1403 de 2007", "Falla eléctrica: traslado inmediato a cavas con monitoreo estricto de temperatura (2-8 °C)."),
+  C(18, "contraindicaciones", "Duplicidad tóxica", "Acetaminofén puro más antigripal",
+    "Un usuario compra tabletas de acetaminofén 500 mg y simultáneamente un antigripal multisíntoma comercial en sobres.",
+    "¿Qué verificación debe realizar el dispensador?",
+    [["Ninguna: tratan síntomas diferentes.", "Falso."],
+     ["Verificar la composición del antigripal: la mayoría contiene 500 mg de acetaminofén por sobre; tomarlos juntos puede sobrepasar los 4 g diarios causando necrosis hepática.", "Correcto: la sobredosis inadvertida es la causa líder de falla hepática aguda."],
+     ["Recomendarle que tome ambos con leche.", "La leche no reduce el metabolito reactivo NAPQI."],
+     ["Aumentar el intervalo a cada 2 horas.", "Aumentaría la toxicidad hepática."]],
+    1, "Farmacovigilancia INVIMA", "Evitar sobredosis por duplicidad de acetaminofén en preparados antigripales (límite 4 g/día)."),
+  C(19, "fne", "Normativa de prescripción", "Fórmula de control especial con tachones",
+    "Llega una fórmula de fenobarbital con la dosis corregida con tachón y bolígrafo de diferente color.",
+    "¿Cuál es el procedimiento legal?",
+    [["Dispensar la dosis original deducible.", "Prohibido."],
+     ["Rechazar la dispensación: las recetas de medicamentos de control especial no deben tener enmendaduras, tachaduras ni tachones (Res. 1478/2006).", "Correcto: la fórmula carece de validez legal si presenta alteraciones manuscritas."],
+     ["Llamar al médico y hacer que el paciente firme atrás.", "La enmienda debe constar en una nueva fórmula médica original."],
+     ["Retener la fórmula y entregar la mitad.", "Ilegal."]],
+    1, "Resolución 1478 de 2006", "Recetas de control especial: nulas con tachaduras, borrones o enmendaduras."),
+  C(20, "indicaciones", "Dispensación de bisfosfonatos", "Alendronato tomado al acostarse",
+    "Una paciente manifiesta que toma su tableta semanal de alendronato por la noche antes de acostarse a dormir.",
+    "¿Qué advertencia de seguridad urgente debe recibir?",
+    [["Que continúe así para evitar el mareo.", "Peligroso: puede causar esofagitis erosiva grave o perforación."],
+     ["Tomarla en ayunas al levantarse con un vaso lleno de agua pura y permanecer erguido (de pie o sentado) mínimo 30 minutos sin acostarse.", "Correcto: evita que la tableta refluye o se aloje en la mucosa esofágica causando úlceras perforantes."],
+     ["Tomarla con jugo de naranja para absorberla mejor.", "Los jugos aumentan la irritación gástrica y bloquean la absorción."],
+     ["Tomarla con leche tibia.", "El calcio de la leche anula por completo la biodisponibilidad del alendronato."]],
+    1, "Guías Clínicas de Reumatología", "Alendronato: ayuno estricto, agua pura, posición erguida por 30 minutos para evitar esofagitis.")
+];
+
+/* ============================================================
+   CONCEPTOS CLAVE
+   ============================================================ */
+const CONCEPTS = [
+  ["Fármaco", "Sustancia activa con propiedad biológica que previene, alivia o cura enfermedades.", "Metformina en diabetes tipo 2."],
+  ["Principio activo (DCI)", "Molécula responsable de la acción terapéutica nombrada internacionalmente.", "Omeprazol es el principio activo de Losec."],
+  ["Biodisponibilidad", "Porcentaje de fármaco inalterado que alcanza la circulación sistémica.", "100% por vía intravenosa."],
+  ["Vida media (t1/2)", "Tiempo necesario para que la concentración plasmática se reduzca a la mitad.", "Levotiroxina: ~7 días; Omeprazol: ~1 hora."],
+  ["Profármaco", "Molécula inerte que requiere biotransformación enzimática para ser activa.", "Clopidogrel activado por CYP2C19."],
+  ["Margen terapéutico estrecho", "Rango estrecho entre la dosis curativa y la tóxica; exige monitoreo.", "Warfarina (control de INR) y Digoxina."],
+  ["FEFO", "First Expire, First Out: rotación que despacha primero el lote que vence antes.", "Lote con 4 meses de vigencia sale antes que el de 12 meses."],
+  ["Zona IVb (OMS)", "Clima cálido y muy húmedo que exige estabilidad a 30 °C y 75% HR.", "Cúcuta y Norte de Santander."],
+  ["Control Especial (FNE)", "Sustancias con riesgo de abuso sujetas a monopolio del Estado.", "Morfina, Diazepam, Fentanilo."],
+  ["Cadena de Frío", "Mantenimiento ininterrumpido de 2 °C a 8 °C para termolábiles.", "Insulinas, oxitocina y suspensiones reconstituidas."]
+];
+
+function renderConcepts() {
+  const q = document.getElementById('conceptSearch').value.toLowerCase().trim();
+  const grid = document.getElementById('conceptsGrid');
+  const list = CONCEPTS.filter(c => !q || c.join(' ').toLowerCase().includes(q));
+  grid.innerHTML = list.map(c => `
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg space-y-2">
+      <h3 class="font-black text-white text-sm flex items-center gap-2"><i class="fa-solid fa-bookmark text-emerald-400"></i>${esc(c[0])}</h3>
+      <p class="text-xs text-slate-300 leading-relaxed">${esc(c[1])}</p>
+      <p class="text-[11px] text-amber-300"><i class="fa-solid fa-lightbulb mr-1"></i><strong>Ejemplo:</strong> ${esc(c[2])}</p>
+    </div>`).join('') || '<p class="text-sm text-slate-400">No hay conceptos coincidentes.</p>';
+}
+
+/* ============================================================
+   APUNTES PERSISTENTES
+   ============================================================ */
+function openNotesModal() { document.getElementById('notesModal').classList.remove('hidden'); }
+function closeNotesModal() { document.getElementById('notesModal').classList.add('hidden'); }
+function saveNotes() {
+  try { localStorage.setItem('farmasena_study_notes_v2', document.getElementById('userStudyNotes').value); } catch (e) {}
+  const s = document.getElementById('saveStatus');
+  s.classList.remove('hidden'); setTimeout(() => s.classList.add('hidden'), 2500);
+}
+function loadNotes() {
+  try { const v = localStorage.getItem('farmasena_study_notes_v2'); if (v) document.getElementById('userStudyNotes').value = v; } catch (e) {}
+}
+
+/* ============================================================
+   FILTRADO DINÁMICO DEMO VS PRO
+   ============================================================ */
+function getActiveDrugs() {
+  return License.isPro() ? ALL_DRUGS : ALL_DRUGS.slice(0, 15);
+}
+
+function getActiveCases() {
+  return License.isPro() ? ALL_CASES : ALL_CASES.slice(0, 3);
+}
+
+/* ============================================================
+   HISTORIAL Y BANCO DE FALLADAS
+   ============================================================ */
+const SESSIONS_KEY = 'farmasena_exam_sessions_v2';
+const WRONG_BANK_KEY = 'farmasena_wrong_bank_v2';
+const DEMO_TEST_USED_KEY = 'farmasena_demo_completed_v2';
+
+const ExamStore = {
+  getSessions() { return LS.get(SESSIONS_KEY, []); },
+  getWrongBank() { return LS.get(WRONG_BANK_KEY, []); },
+
+  saveExamResult(testData) {
+    const sessions = this.getSessions();
+    sessions.unshift({
+      id: Date.now(),
+      date: new Date().toLocaleString(),
+      score: testData.score,
+      total: testData.total,
+      correct: testData.correct,
+      wrong: testData.wrong,
+      failedQuestions: testData.failedQuestions
+    });
+    LS.set(SESSIONS_KEY, sessions.slice(0, 30));
+
+    const currentWrong = this.getWrongBank();
+    const wrongMap = new Map();
+    currentWrong.forEach(item => wrongMap.set(item.key, item));
+
+    testData.failedQuestions.forEach(item => {
+      wrongMap.set(item.key, item);
+    });
+
+    testData.passedKeys.forEach(key => {
+      if (wrongMap.has(key)) wrongMap.delete(key);
+    });
+
+    LS.set(WRONG_BANK_KEY, Array.from(wrongMap.values()));
+  },
+
+  clear() {
+    LS.set(SESSIONS_KEY, []);
+    LS.set(WRONG_BANK_KEY, []);
+  }
+};
+
+/* ============================================================
+   GENERADOR DE PREGUNTAS (14 TIPOS AUDITADOS)
+   ============================================================ */
+const GEN_TYPES = [
+  { t: 'def',     f: 'def',     cat: 'definicion',         catName: 'Concepto y definición',            stem: d => `¿Cómo se define o qué es ${d.name}?` },
+  { t: 'uso',     f: 'uso',     cat: 'indicaciones',       catName: 'Indicaciones clínicas',            stem: d => `¿Para qué se utiliza principalmente ${d.name}?` },
+  { t: 'mec',     f: 'mec',     cat: 'mecanismo',          catName: 'Mecanismo de acción',              stem: d => `¿Cuál es el mecanismo de acción de ${d.name}?` },
+  { t: 'ram',     f: 'ram',     cat: 'contraindicaciones', catName: 'Efectos adversos y riesgos',       stem: d => `¿Qué reacciones adversas caracterizan a ${d.name}?` },
+  { t: 'contra',  f: 'contra',  cat: 'contraindicaciones', catName: 'Contraindicaciones',               stem: d => `¿Cuál es una contraindicación o precaución clave de ${d.name}?` },
+  { t: 'inter',   f: 'inter',   cat: 'contraindicaciones', catName: 'Interacciones relevantes',          stem: d => `¿Qué interacción farmacológica crítica presenta ${d.name}?` },
+  { t: 'grupo',   f: 'grupo',   cat: 'definicion',         catName: 'Clasificación terapéutica',        stem: d => `¿A qué grupo farmacológico pertenece ${d.name}?` },
+  { t: 'perla',   f: 'perla',   cat: 'indicaciones',       catName: 'Dispensación y Regla de Oro',      stem: d => `¿Cuál es la regla de oro al dispensar o administrar ${d.name}?` },
+  { t: 'storage', f: 'storage', cat: 'protocolos',         catName: 'Almacenamiento y estabilidad',     stem: d => `¿Cuáles son las condiciones de almacenamiento de ${d.name}?` },
+  { t: 'pk',      f: 'pk',      cat: 'definicion',         catName: 'Farmacocinética (LADME)',          stem: d => `¿Qué perfil farmacocinético corresponde a ${d.name}?` },
+  { t: 'comp',    f: 'comp',    cat: 'definicion',         catName: 'Forma y composición',              stem: d => `¿Cuál es la forma farmacéutica y concentración de ${d.name}?` },
+  { t: 'n-mec',   f: 'mec',     rev: true, cat: 'definicion', catName: 'Identificación por mecanismo', stem: d => `¿Qué medicamento actúa mediante este mecanismo? «${d.mec}»` },
+  { t: 'n-uso',   f: 'uso',     rev: true, cat: 'definicion', catName: 'Identificación por uso',       stem: d => `¿Qué medicamento se indica principalmente para: «${d.uso}»?` },
+  { t: 'n-def',   f: 'def',     rev: true, cat: 'definicion', catName: 'Identificación por definición', stem: d => `¿Qué principio activo corresponde a la siguiente definición? «${d.def}»` }
+];
+
+function buildQuestionFromCatalog(t, d) {
+  const drugs = getActiveDrugs();
+  let others = drugs.filter(x => x.id !== d.id && x.atc.slice(0, 4) !== d.atc.slice(0, 4));
+  if (others.length < 3) others = drugs.filter(x => x.id !== d.id);
+  const getText = t.rev ? (x => x.name) : (x => x[t.f]);
+  const correctText = getText(d);
+  const dis = [];
+  const used = new Set([correctText]);
+
+  for (const x of shuffle(others)) {
+    const tx = getText(x);
+    if (!tx || used.has(tx)) continue;
+    used.add(tx);
+    dis.push(tx);
+    if (dis.length === 3) break;
+  }
+
+  const opts = [{ text: correctText, ok: true }].concat(dis.map(tx => ({ text: tx, ok: false })));
+  const sh = shuffle(opts);
+
+  return {
+    kind: 'gen', cat: t.cat, catName: t.catName, title: d.name,
+    question: t.stem(d), options: sh, correct: sh.findIndex(o => o.ok),
+    explain: `${d.name}: ${d.def}`, extra: `Regla de oro: ${d.perla}`
+  };
+}
+
+function buildQuestionFromCase(c) {
+  const opts = c.opts.map((o, i) => ({ text: o[0], note: o[1], ok: i === c.correct }));
+  const sh = shuffle(opts);
+  return {
+    kind: 'case',
+    cat: c.cat,
+    catName: c.catName,
+    title: c.title,
+    scenario: c.scenario,
+    question: c.question,
+    options: sh,
+    correct: sh.findIndex(o => o.ok),
+    explain: opts[c.correct].note,
+    extra: `Resumen: ${c.summary}`,
+    law: c.law
+  };
+}
+
+function makeQuestionByKey(key) {
+  const p = key.split('|');
+  if (p[0] === 'c') {
+    const c = ALL_CASES.find(x => String(x.id) === p[1]);
+    return buildQuestionFromCase(c || ALL_CASES[0]);
+  }
+  const d = ALL_DRUGS.find(x => x.id === p[2]);
+  const t = GEN_TYPES.find(x => x.t === p[1]);
+  return buildQuestionFromCatalog(t || GEN_TYPES[0], d || ALL_DRUGS[0]);
+}
+
+/* ============================================================
+   SELECCIÓN DE REACTIVOS (PRIORIZANDO FALLADAS)
+   ============================================================ */
+function selectExamKeys(n) {
+  const isPro = License.isPro();
+  const drugs = getActiveDrugs();
+  const cases = getActiveCases();
+  const targetCount = isPro ? n : 10;
+
+  const genKeys = [];
+  drugs.forEach(d => GEN_TYPES.forEach(t => genKeys.push(`g|${t.t}|${d.id}`)));
+  const caseKeys = cases.map(c => `c|${c.id}`);
+
+  const wrongBank = ExamStore.getWrongBank();
+  const wrongKeys = wrongBank.map(w => w.key).filter(k => {
+    if (isPro) return true;
+    const parts = k.split('|');
+    if (parts[0] === 'c') return Number(parts[1]) <= 3;
+    return drugs.some(d => d.id === parts[2]);
+  });
+
+  const reviewQuota = Math.floor(targetCount * 0.35);
+  const prioritized = shuffle(wrongKeys).slice(0, reviewQuota);
+  const remainingSlots = targetCount - prioritized.length;
+
+  const pool = shuffle([...genKeys, ...caseKeys]).filter(k => !prioritized.includes(k));
+  return shuffle([...prioritized, ...pool.slice(0, remainingSlots)]);
+}
+
+/* ============================================================
+   SIMULADOR: CONFIGURACIÓN Y EJECUCIÓN
+   ============================================================ */
+let TEST = null;
+
+function renderSetup() {
+  const area = document.getElementById('quizArea');
+  const isPro = License.isPro();
+  const demoDone = LS.get(DEMO_TEST_USED_KEY, false);
+  const wrongBank = ExamStore.getWrongBank();
+
+  if (!isPro && demoDone) {
+    area.innerHTML = `
+      <div class="text-center py-10 space-y-4">
+        <div class="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-3xl mx-auto border border-amber-500/40">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h2 class="text-xl font-black text-white">Has completado tu prueba gratuita de la Versión Demo</h2>
+        <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+          Para realizar simulacros ilimitados, acceder a los 154 medicamentos y 20 casos normativos, activa tu <strong>Versión Pro</strong>.
+        </p>
+        <div class="pt-2 flex justify-center gap-3">
+          <button onclick="openLicenseModal()" class="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xl active:scale-95">
+            <i class="fa-solid fa-crown mr-1"></i> Activar Versión Pro
+          </button>
+          <button onclick="openHistoryModal()" class="px-5 py-3 rounded-2xl bg-slate-800 text-cyan-300 font-bold text-xs border border-cyan-500/30">
+            Ver preguntas falladas
+          </button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  area.innerHTML = `
+    <div class="space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30">
+            ${isPro ? 'Simulador Pro Ilimitado' : 'Simulador Demo (1 Intento)'}
+          </span>
+          <h2 class="text-lg font-black text-white mt-1">Simulador Farmacéutico</h2>
+          <p class="text-xs text-slate-400">Preguntas generadas de los medicamentos habilitados y casos normativos.</p>
+        </div>
+        <button onclick="startExam()" class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-xl text-xs shadow-lg active:scale-95 flex items-center gap-1.5 self-start md:self-auto">
+          <i class="fa-solid fa-play"></i> Iniciar Prueba
+        </button>
+      </div>
+      ${wrongBank.length > 0 ? `
+        <div class="p-3 bg-rose-950/40 border border-rose-500/30 rounded-2xl flex flex-wrap justify-between items-center gap-2 text-xs">
+          <span class="text-rose-300 font-medium">Tienes <strong>${wrongBank.length}</strong> preguntas pendientes por reforzar.</span>
+          <button onclick="startTargetedWrongTest()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-[11px] transition-all">
+            Entrenar sólo falladas
+          </button>
+        </div>` : ''}
+    </div>`;
+}
+
+function startExam(customKeys) {
+  const isPro = License.isPro();
+  if (!isPro && LS.get(DEMO_TEST_USED_KEY, false) && !customKeys) {
+    openLicenseModal();
+    return;
+  }
+
+  const keys = customKeys || selectExamKeys(15);
+  TEST = {
+    qs: keys.map(k => Object.assign(makeQuestionByKey(k), { key: k, chosen: null })),
+    idx: 0,
+    start: Date.now()
+  };
+
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startTargetedWrongTest() {
+  const bank = ExamStore.getWrongBank();
+  if (!bank.length) {
+    alert("¡No tienes preguntas falladas guardadas!");
+    return;
+  }
+  closeHistoryModal();
+  switchTab('simulador');
+  startExam(shuffle(bank.map(w => w.key)).slice(0, 15));
+}
+
+function renderQuestion() {
+  const q = TEST.qs[TEST.idx];
+  const total = TEST.qs.length;
+  const answered = TEST.qs.filter(x => x.chosen !== null).length;
+
+  const dots = TEST.qs.map((x, i) => {
+    let cls = 'bg-slate-950 border-slate-700 text-slate-400';
+    if (x.chosen !== null) cls = 'bg-emerald-900/60 border-emerald-500/60 text-emerald-300';
+    if (i === TEST.idx) cls = 'bg-emerald-600 border-emerald-300 text-white ring-2 ring-emerald-400/40';
+    return `<button onclick="goToQuestion(${i})" class="w-8 h-8 rounded-lg border text-[11px] font-bold transition-all ${cls}">${i + 1}</button>`;
+  }).join('');
+
+  const optsHtml = q.options.map((o, i) => {
+    const sel = q.chosen === i;
+    const cls = sel ? 'bg-emerald-950/70 border-2 border-emerald-400 text-emerald-50' : 'bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800 text-slate-200';
+    const badge = sel ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-800 text-slate-400 border-slate-700';
+    return `
+      <button onclick="chooseOption(${i})" class="w-full text-left p-4 rounded-2xl ${cls} text-xs transition-all flex items-start gap-3.5">
+        <span class="w-6 h-6 rounded-full ${badge} border flex items-center justify-center font-bold text-xs mt-0.5 flex-shrink-0">${String.fromCharCode(65 + i)}</span>
+        <span class="font-medium leading-relaxed">${esc(o.text)}</span>
+      </button>`;
+  }).join('');
+
+  const scenario = q.scenario ? `
+    <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800/60 space-y-1.5">
+      <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5"><i class="fa-solid fa-notes-medical text-teal-400"></i> Caso Clínico</span>
+      <p class="text-xs text-slate-200 leading-relaxed">${esc(q.scenario)}</p>
+    </div>` : '';
+
+  document.getElementById('quizArea').innerHTML = `
+    <div class="space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="text-xs text-slate-400">Pregunta <strong class="text-white mono">${TEST.idx + 1}</strong> de <span class="mono">${total}</span> · Respondidas: <strong class="text-emerald-400 mono">${answered}</strong></div>
+        <button onclick="finishExam()" class="px-5 py-2 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-black text-xs rounded-xl shadow-lg transition-all active:scale-95">Terminar prueba</button>
+      </div>
+      <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400" style="width:${(answered / total) * 100}%"></div></div>
+      <div class="flex flex-wrap gap-1.5">${dots}</div>
+      <div class="bg-slate-950/80 border border-slate-800 rounded-3xl p-5 space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+          <span class="text-xs font-mono font-bold text-slate-400 uppercase">${esc(q.catName)}</span>
+          <span class="text-[11px] font-semibold text-emerald-400/90 bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-500/20">${esc(q.title)}</span>
+        </div>
+        ${scenario}
+        <h4 class="font-bold text-sm text-white">${esc(q.question)}</h4>
+        <div class="space-y-2.5">${optsHtml}</div>
+      </div>
+      <div class="flex justify-between">
+        <button onclick="goToQuestion(${TEST.idx - 1})" ${TEST.idx === 0 ? 'disabled' : ''} class="px-4 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold disabled:opacity-30">Anterior</button>
+        <button onclick="goToQuestion(${TEST.idx + 1})" ${TEST.idx === total - 1 ? 'disabled' : ''} class="px-4 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold disabled:opacity-30">Siguiente</button>
+      </div>
+    </div>`;
+}
+
+function chooseOption(i) {
+  TEST.qs[TEST.idx].chosen = i;
+  renderQuestion();
+}
+
+function goToQuestion(i) {
+  if (i >= 0 && i < TEST.qs.length) {
+    TEST.idx = i;
+    renderQuestion();
+  }
+}
+
+function finishExam() {
+  if (!confirm('¿Deseas finalizar la prueba y registrar tus resultados?')) return;
+  TEST.end = Date.now();
+
+  const correct = TEST.qs.filter(q => q.chosen !== null && q.options[q.chosen].ok).length;
+  const pct = Math.round((correct / TEST.qs.length) * 100);
+
+  const failed = [];
+  const passedKeys = [];
+
+  TEST.qs.forEach(q => {
+    const isOk = q.chosen !== null && q.options[q.chosen].ok;
+    if (isOk) {
+      passedKeys.push(q.key);
+    } else {
+      failed.push({
+        key: q.key,
+        title: q.title,
+        question: q.question,
+        chosenText: q.chosen !== null ? q.options[q.chosen].text : 'Sin responder',
+        correctText: q.options[q.correct].text,
+        explain: q.explain,
+        date: new Date().toLocaleDateString()
+      });
+    }
+  });
+
+  ExamStore.saveExamResult({
+    score: pct,
+    total: TEST.qs.length,
+    correct: correct,
+    wrong: failed.length,
+    failedQuestions: failed,
+    passedKeys: passedKeys
+  });
+
+  if (!License.isPro()) {
+    LS.set(DEMO_TEST_USED_KEY, true);
+  }
+
+  const area = document.getElementById('quizArea');
+  area.innerHTML = `
+    <div class="space-y-6">
+      <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800 text-center space-y-3">
+        <p class="text-5xl font-black mono ${pct >= 80 ? 'text-emerald-400' : 'text-amber-400'}">${pct}%</p>
+        <h3 class="text-base font-bold text-white">${pct >= 80 ? '¡Buen trabajo en esta prueba!' : 'Nivel de riesgo detectado en conceptos normativos'}</h3>
+        <p class="text-xs text-slate-400">Aciertos: ${correct} de ${TEST.qs.length} preguntas | Fallos registrados: ${failed.length}</p>
+      </div>
+
+      ${!License.isPro() ? `
+      <div class="p-5 rounded-3xl bg-gradient-to-r from-amber-950/80 to-slate-900 border border-amber-500/40 space-y-3">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 text-2xl"></i>
+          <div>
+            <h4 class="font-black text-white text-sm">Has alcanzado el límite de tu versión Demo</h4>
+            <p class="text-xs text-slate-300 mt-0.5">En la versión Pro podrás entrenar ilimitadamente sobre tus respuestas erróneas hasta dominarlas y desbloquear los 154 fármacos.</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3 pt-2">
+          <button onclick="openLicenseModal()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow-lg">
+            Desbloquear Modo Pro Completo
+          </button>
+          <button onclick="openHistoryModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-cyan-300 font-bold text-xs border border-cyan-500/30">
+            Revisar Respuestas Malas en el Historial
+          </button>
+        </div>
+      </div>` : `
+      <div class="flex gap-3">
+        <button onclick="renderSetup()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all">Volver al inicio</button>
+        ${failed.length ? `<button onclick="startTargetedWrongTest()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all">Reforzar mis preguntas falladas</button>` : ''}
+      </div>`}
+    </div>`;
+}
+
+function clearAllHistory() {
+  if (confirm('¿Deseas reiniciar tu historial de pruebas y el banco de errores?')) {
+    ExamStore.clear();
+    openHistoryModal();
+  }
+}
+
+/* ============================================================
+   CONTROLADORES DE MODALES: HISTORIAL Y LICENCIA PRO
+   ============================================================ */
+function openHistoryModal() {
+  const modal = document.getElementById('historyModal');
+  if (!modal) return;
+
+  const wrongBank = ExamStore.getWrongBank();
+  const sessions = ExamStore.getSessions();
+
+  const badgeEl = document.getElementById('histFailedBadge');
+  if (badgeEl) badgeEl.textContent = wrongBank.length;
+
+  const wrongContainer = document.getElementById('wrongQuestionsList');
+  if (wrongContainer) {
+    if (!wrongBank.length) {
+      wrongContainer.innerHTML = `<div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-slate-400 text-xs text-center">No tienes fallas pendientes registradas. ¡Excelente trabajo!</div>`;
+    } else {
+      wrongContainer.innerHTML = wrongBank.map(w => `
+        <div class="p-3.5 bg-slate-950 rounded-2xl border border-rose-500/30 space-y-1.5">
+          <div class="flex justify-between items-center">
+            <span class="text-rose-400 font-bold">${esc(w.title || 'Pregunta')}</span>
+            <span class="text-[10px] text-slate-500">${w.date || 'Reciente'}</span>
+          </div>
+          <p class="text-white font-medium text-xs">${esc(w.question)}</p>
+          <p class="text-rose-300 text-[11px]"><strong class="text-slate-400">Marcaste:</strong> ${esc(w.chosenText)}</p>
+          <p class="text-emerald-300 text-[11px]"><strong class="text-slate-400">Respuesta correcta:</strong> ${esc(w.correctText)}</p>
+          <p class="text-slate-400 text-[10px] italic bg-slate-900/80 p-2 rounded-xl mt-1 border border-slate-800">${esc(w.explain || '')}</p>
+        </div>
+      `).join('');
+    }
+  }
+
+  const sessionContainer = document.getElementById('historySessionsList');
+  if (sessionContainer) {
+    if (!sessions.length) {
+      sessionContainer.innerHTML = `<div class="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-slate-400 text-xs text-center">Aún no has finalizado simulaciones.</div>`;
+    } else {
+      sessionContainer.innerHTML = sessions.map(s => `
+        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <p class="text-white font-bold">${s.score}% de aciertos</p>
+            <p class="text-[11px] text-slate-400">${s.date} · Correctas: ${s.correct} / ${s.total} · Fallos: ${s.wrong}</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${s.score >= 80 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${s.score >= 80 ? 'Aprobado' : 'Reforzar'}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeHistoryModal() {
+  const modal = document.getElementById('historyModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function openLicenseModal() {
+  const modal = document.getElementById('licenseModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeLicenseModal() {
+  const modal = document.getElementById('licenseModal');
+  if (modal) modal.classList.add('hidden');
+  const err = document.getElementById('proActivationError');
+  if (err) err.classList.add('hidden');
+}
+
+function handleActivationSubmit() {
+  const input = document.getElementById('inputProKey');
+  const err = document.getElementById('proActivationError');
+  if (!input) return;
+
+  const key = input.value;
+  if (License.activate(key)) {
+    alert("¡Felicidades! Se ha activado la Versión Pro con éxito.");
+    closeLicenseModal();
+    updateAppUIForPlan();
+    renderSetup();
+    renderMedicamentos();
+    updateFlashcardView();
+  } else {
+    if (err) err.classList.remove('hidden');
+  }
+}
+
+/* ============================================================
+   CONTROLADORES DEL CATÁLOGO Y FILTROS
+   ============================================================ */
+let currentFilter = 'all';
+let currentAtc = 'ALL';
+let searchQuery = '';
+let currentModalId = null;
+
+const STUDIED_KEY = 'farmasena_studied_drugs_v2';
+const getStudied = () => new Set(LS.get(STUDIED_KEY, []));
+
+function toggleStudied(id) {
+  const s = getStudied();
+  if (s.has(id)) {
+    s.delete(id);
+  } else {
+    s.add(id);
+  }
+  LS.set(STUDIED_KEY, Array.from(s));
+  renderMedicamentos();
+}
+
+function updateModalStudiedBtn() {
+  const btn = document.getElementById('modalStudiedBtn');
+  if (!btn || !currentModalId) return;
+  const isDone = getStudied().has(currentModalId);
+  btn.innerHTML = isDone
+    ? '<i class="fa-solid fa-circle-check text-emerald-400"></i> Estudiado'
+    : '<i class="fa-regular fa-circle text-slate-400"></i> Marcar como estudiado';
+}
+
+function toggleStudiedFromModal() {
+  if (!currentModalId) return;
+  toggleStudied(currentModalId);
+  updateModalStudiedBtn();
+}
+
+function setSpecialFilter(f, e) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(b => {
+    b.classList.remove('bg-emerald-600', 'text-white', 'shadow-md');
+    b.classList.add('bg-slate-800');
+  });
+  if (e && e.target) {
+    const btn = e.target.closest('button');
+    if (btn) {
+      btn.classList.remove('bg-slate-800');
+      btn.classList.add('bg-emerald-600', 'text-white', 'shadow-md');
+    }
+  }
+  renderMedicamentos();
+}
+
+function setAtcFilter(code, e) {
+  currentAtc = code;
+  document.querySelectorAll('.atc-btn').forEach(b => {
+    b.classList.remove('bg-emerald-500/20', 'text-emerald-300', 'border', 'border-emerald-500/40');
+    b.classList.add('bg-slate-800', 'text-slate-300');
+  });
+  if (e && e.target) {
+    const btn = e.target.closest('button');
+    if (btn) {
+      btn.classList.remove('bg-slate-800', 'text-slate-300');
+      btn.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border', 'border-emerald-500/40');
+    }
+  }
+  renderMedicamentos();
+}
+
+function filterMedicamentos() {
+  searchQuery = document.getElementById('searchInput').value;
+  renderMedicamentos();
+}
+
+function renderMedicamentos() {
+  const grid = document.getElementById('medicamentosGrid');
+  if (!grid) return;
+  const isPro = License.isPro();
+  grid.innerHTML = '';
+
+  const q = searchQuery.toLowerCase().trim();
+  const studied = getStudied();
+
+  ALL_DRUGS.forEach((d, idx) => {
+    const isLocked = !isPro && idx >= 15;
+    const isDone = studied.has(d.id);
+
+    // Filtros especiales
+    if (currentFilter === 'fne' && !d.fne) return;
+    if (currentFilter === 'frio' && !d.frio) return;
+    if (currentFilter === 'cucuta' && !d.cucuta) return;
+    if (currentFilter === 'atb' && !d.atb) return;
+    if (currentFilter === 'pend' && isDone) return;
+    if (currentFilter === 'ok' && !isDone) return;
+
+    // Filtro por grupo ATC
+    if (currentAtc !== 'ALL' && d.atcGroup !== currentAtc) return;
+
+    // Búsqueda por texto
+    if (q && ![d.name, d.grupo, d.atc, d.uso, d.def].some(t => (t || '').toLowerCase().includes(q))) {
+      return;
+    }
+
+    let badges = `<span class="text-[10px] mono font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">${d.atc}</span>`;
+    if (d.fne) badges += `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40"><i class="fa-solid fa-ribbon mr-1"></i>FNE</span>`;
+    if (d.frio) badges += `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"><i class="fa-solid fa-snowflake mr-1"></i>2-8 °C</span>`;
+    if (d.cucuta) badges += `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40"><i class="fa-solid fa-temperature-high mr-1"></i>Cúcuta</span>`;
+    if (d.atb) badges += `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40"><i class="fa-solid fa-bacteria mr-1"></i>ATB</span>`;
+
+    const card = document.createElement('div');
+    card.className = `relative bg-slate-900 border ${isLocked ? 'border-amber-500/30 bg-slate-950/60' : isDone ? 'border-emerald-500/40' : 'border-slate-800'} rounded-3xl p-5 shadow-lg flex flex-col justify-between transition-all`;
+
+    if (isLocked) {
+      card.innerHTML = `
+        <div class="filter blur-sm select-none opacity-40">
+          <div class="flex items-center gap-1.5 mb-2.5">${badges}</div>
+          <h3 class="text-lg font-black text-white">${esc(d.name)}</h3>
+          <p class="text-xs text-emerald-400 font-semibold mb-2">${esc(d.grupo)}</p>
+          <p class="text-xs text-slate-300 mb-2">${esc(d.def)}</p>
+        </div>
+        <div class="absolute inset-0 bg-slate-950/80 rounded-3xl backdrop-blur-[2px] flex flex-col items-center justify-center p-5 text-center space-y-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/40">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h4 class="font-black text-white text-sm">${esc(d.name)}</h4>
+          <p class="text-[11px] text-amber-200/90 font-medium">Disponible exclusivamente en la Versión Pro</p>
+          <button onclick="openLicenseModal()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-xl text-[11px] transition-all shadow-md active:scale-95">
+            Desbloquear Ficha
+          </button>
+        </div>`;
+    } else {
+      card.innerHTML = `
+        <div>
+          <div class="flex items-center flex-wrap gap-1.5 mb-2.5">${badges}</div>
+          <h3 class="text-lg font-black text-white">${esc(d.name)}</h3>
+          <p class="text-xs text-emerald-400 font-semibold mb-2">${esc(d.grupo)}</p>
+          <p class="text-xs text-slate-300 leading-relaxed mb-2">${esc(d.def)}</p>
+          <p class="text-[11px] text-slate-400 mb-1"><strong class="text-slate-300">Sirve para:</strong> ${esc(d.uso)}</p>
+        </div>
+        <div class="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+          <button onclick="toggleStudied('${d.id}')" class="px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${isDone ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'}">
+            <i class="fa-${isDone ? 'solid fa-circle-check text-emerald-400' : 'regular fa-circle text-slate-400'}"></i> ${isDone ? 'Estudiado' : 'Marcar'}
+          </button>
+          <button onclick="openDetailModal('${d.id}')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all">
+            Ficha completa <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </button>
+        </div>`;
+    }
+    grid.appendChild(card);
+  });
+
+  const activeDrugs = getActiveDrugs();
+  const statDrugs = document.getElementById('statDrugs');
+  const studiedCount = document.getElementById('studiedCount');
+  const studiedTotal = document.getElementById('studiedTotal');
+  const shownCount = document.getElementById('shownCount');
+
+  if (statDrugs) statDrugs.textContent = activeDrugs.length;
+  if (studiedCount) studiedCount.textContent = activeDrugs.length;
+  if (studiedTotal) studiedTotal.textContent = ALL_DRUGS.length;
+  if (shownCount) shownCount.textContent = grid.children.length;
+}
+
+function openDetailModal(id) {
+  const d = ALL_DRUGS.find(x => x.id === id);
+  if (!d) return;
+  currentModalId = id;
+
+  let badges = `<span class="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">ATC ${d.atc}</span>`;
+  if (d.fne) badges += `<span class="text-xs font-bold px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">FNE MONOPOLIO</span>`;
+  if (d.frio) badges += `<span class="text-xs font-bold px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">CADENA DE FRÍO (2-8 °C)</span>`;
+  if (d.cucuta) badges += `<span class="text-xs font-bold px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">ALERTA CÚCUTA</span>`;
+  if (d.atb) badges += `<span class="text-xs font-bold px-2.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">ANTIBIÓTICO</span>`;
+
+  document.getElementById('modalBadges').innerHTML = badges;
+  document.getElementById('modalDrugName').textContent = d.name;
+  document.getElementById('modalGroup').textContent = d.grupo;
+
+  const box = (title, icon, color, text) => `
+    <div class="p-3 bg-slate-950/70 rounded-2xl border border-slate-800 space-y-1">
+      <strong class="${color} font-bold block"><i class="fa-solid ${icon} mr-1.5"></i>${title}</strong>
+      <p class="text-slate-300 leading-relaxed text-xs">${esc(text)}</p>
+    </div>`;
+
+  document.getElementById('modalBody').innerHTML = `
+    ${box('Definición técnica', 'fa-book', 'text-sky-400', d.def)}
+    ${box('Composición y formas', 'fa-flask', 'text-indigo-300', d.comp)}
+    ${box('Indicaciones principales', 'fa-clipboard-list', 'text-emerald-400', d.uso)}
+    ${box('Mecanismo de acción', 'fa-gears', 'text-teal-400', d.mec)}
+    ${box('Riesgos y reacciones adversas', 'fa-triangle-exclamation', 'text-rose-400', d.ram)}
+    ${box('Contraindicaciones críticas', 'fa-ban', 'text-amber-400', d.contra)}
+    <div class="p-4 bg-gradient-to-r from-emerald-950/60 to-slate-950 rounded-2xl border border-emerald-500/30 space-y-1">
+      <strong class="text-emerald-300 font-bold block"><i class="fa-solid fa-lightbulb text-yellow-400 mr-1.5"></i>Regla de Oro de Dispensación</strong>
+      <p class="text-slate-200 text-xs">${esc(d.perla)}</p>
+      <p class="text-slate-400 text-[11px] mt-1"><strong class="text-slate-300">Almacenamiento:</strong> ${esc(d.storage)}</p>
+    </div>`;
+
+  updateModalStudiedBtn();
+  document.getElementById('drugDetailModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('drugDetailModal').classList.add('hidden');
+}
+
+/* ============================================================
+   CONTROLADORES DEL MODAL HISTORIAL
+   ============================================================ */
+let currentFcIndex = 0, isFlipped = false;
+
+function updateFlashcardView() {
+  const drugs = getActiveDrugs();
+  if (!drugs || !drugs.length) return;
+  if (currentFcIndex >= drugs.length) currentFcIndex = 0;
+  const d = drugs[currentFcIndex];
+  if (!d) return;
+
+  const cardInner = document.getElementById('singleFlashcardInner');
+  if (cardInner) cardInner.classList.remove('rotate-y-180');
+  isFlipped = false;
+
+  const setElText = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val ?? '-';
+  };
+
+  setElText('flashcardCurrentIndex', currentFcIndex + 1);
+  setElText('flashcardTotalCount', drugs.length);
+  setElText('fcCategoryBadge', d.grupo || 'Grupo');
+  setElText('fcCondicionBadge', d.fne ? 'Control Especial FNE' : d.frio ? '2 °C a 8 °C' : 'General');
+  setElText('fcCodeAtc', d.atc ? `ATC: ${d.atc}` : 'ATC');
+  setElText('fcDrugName', d.name || 'Medicamento');
+  setElText('fcDrugBrands', d.brands || d.name || '-');
+  setElText('fcBackName', d.name || '-');
+  setElText('fcDef', d.def || '-');
+  setElText('fcUso', d.uso || '-');
+  setElText('fcMecanismo', d.mec || '-');
+  setElText('fcRam', d.ram || '-');
+  setElText('fcGoldenRule', d.perla || '-');
+
+  const storageEl = document.getElementById('fcStorageReq');
+  if (storageEl) {
+    storageEl.innerHTML = `<i class="fa-solid fa-box-archive mr-1.5 text-amber-400"></i> ${esc(d.storage || 'Almacenar en lugar fresco')}`;
+  }
+}
+
+function flipFlashcard() {
+  isFlipped = !isFlipped;
+  document.getElementById('singleFlashcardInner').classList.toggle('rotate-y-180', isFlipped);
+}
+
+function nextFlashcard() {
+  const drugs = getActiveDrugs();
+  currentFcIndex = (currentFcIndex + 1) % drugs.length;
+  updateFlashcardView();
+}
+
+function prevFlashcard() {
+  const drugs = getActiveDrugs();
+  currentFcIndex = (currentFcIndex - 1 + drugs.length) % drugs.length;
+  updateFlashcardView();
+}
+
+/* ============================================================
+   NAVEGACIÓN ENTRE PESTAÑAS
+   ============================================================ */
+function switchTab(tabId) {
+  ['catalogo', 'simulador', 'flashcards', 'conceptos', 'protocolos'].forEach(t => {
+    const v = document.getElementById(`view-${t}`);
+    const b = document.getElementById(`tab-${t}`);
+    const mb = document.getElementById(`m-tab-${t}`);
+    if (v) v.classList.add('hidden');
+    if (b) {
+      b.classList.remove('text-emerald-400', 'border-emerald-400');
+      b.classList.add('text-slate-400', 'border-transparent');
+    }
+    if (mb) {
+      mb.classList.remove('text-emerald-400');
+      mb.classList.add('text-slate-400');
+    }
+  });
+
+  const activeView = document.getElementById(`view-${tabId}`);
+  const activeBtn = document.getElementById(`tab-${tabId}`);
+  const activeMBtn = document.getElementById(`m-tab-${tabId}`);
+  if (activeView) activeView.classList.remove('hidden');
+  if (activeBtn) {
+    activeBtn.classList.remove('text-slate-400', 'border-transparent');
+    activeBtn.classList.add('text-emerald-400', 'border-emerald-400');
+  }
+  if (activeMBtn) {
+    activeMBtn.classList.remove('text-slate-400');
+    activeMBtn.classList.add('text-emerald-400');
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================
+   INICIALIZACIÓN
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  checkUrlAutoActivation();
+  updateAppUIForPlan();
+  renderSetup();
+  renderMedicamentos();
+  updateFlashcardView();
+  renderConcepts();
+  loadNotes();
+});
+</script>
+</body>
+</html>
