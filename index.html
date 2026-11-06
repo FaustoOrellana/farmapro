@@ -9,8 +9,8 @@
   <link rel="apple-touch-icon" href="./icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="FarmaSENA">
-  <title>FarmaSENA Pro Cúcuta - Simulador Integral de Farmacología</title>
+  <meta name="apple-mobile-web-app-title" content="FarmaPro">
+  <title>FarmaPro - Sistema Integral de Farmacología</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -39,9 +39,9 @@
         </div>
         <div>
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="font-black text-xl text-white tracking-tight">FarmaSENA <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Pro Cúcuta</span></h1>
-            <span class="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">Dec. 780/2016</span>
-            <span class="text-[10px] bg-purple-500/15 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded-full font-bold">Res. 1478/2006 FNE</span>
+            <h1 class="font-black text-xl text-white tracking-tight">Farma<span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Pro</span></h1>
+            <span class="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">Guía Farmacológica</span>
+            <span class="text-[10px] bg-purple-500/15 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded-full font-bold">Control Especial FNE</span>
           </div>
           <p class="text-xs text-slate-400 font-medium">Estudia 200 medicamentos: definición, composición, usos, mecanismo, riesgos y casos clínicos</p>
         </div>
@@ -70,23 +70,29 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 hidden md:flex space-x-1 border-t border-slate-800/80 text-xs font-semibold overflow-x-auto">
-      <button onclick="switchTab('simulador')" id="tab-simulador" class="tab-btn px-4 py-3 text-emerald-400 border-b-2 border-emerald-400 flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-stethoscope"></i> Simulador de Pruebas</button>
-      <button onclick="switchTab('catalogo')" id="tab-catalogo" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-book-medical"></i> Catálogo de Medicamentos</button>
+      <button onclick="switchTab('catalogo')" id="tab-catalogo" class="tab-btn px-4 py-3 text-emerald-400 border-b-2 border-emerald-400 flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-book-medical"></i> Catálogo de Medicamentos</button>
+      <button onclick="switchTab('simulador')" id="tab-simulador" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-stethoscope"></i> Simulador de Pruebas</button>
       <button onclick="switchTab('flashcards')" id="tab-flashcards" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-layer-group"></i> Flashcards 3D</button>
       <button onclick="switchTab('conceptos')" id="tab-conceptos" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-spell-check"></i> Conceptos Clave</button>
-      <button onclick="switchTab('protocolos')" id="tab-protocolos" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-clipboard-check"></i> Cúcuta, FEFO y Normativa</button>
+      <button onclick="switchTab('protocolos')" id="tab-protocolos" class="tab-btn px-4 py-3 text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center gap-2 transition-all whitespace-nowrap"><i class="fa-solid fa-clipboard-check"></i> FEFO, Frío y Normativa</button>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow space-y-6">
 
-    <!-- SIMULADOR -->
-    <section id="view-simulador" class="space-y-6">
-      <div id="quizArea" class="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-xl"></div>
-    </section>
+    <!-- CATÁLOGO (VISTA PRINCIPAL POR DEFECTO) -->
+    <section id="view-catalogo" class="space-y-6">
+      <!-- DESCARGO MÉDICO OBLIGATORIO GOOGLE PLAY -->
+      <div class="bg-slate-900/80 border border-emerald-500/30 rounded-2xl p-4 flex items-start gap-3.5 shadow-lg">
+        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="text-xs text-slate-300 leading-relaxed">
+          <strong class="text-white block font-bold mb-0.5">Herramienta de Consulta y Estudio Académico</strong>
+          Esta aplicación está diseñada exclusivamente con fines formativos y pedagógicos para estudiantes y técnicos en farmacia. No sustituye el criterio médico profesional, el diagnóstico clínico ni constituye una guía de prescripción directa.
+        </div>
+      </div>
 
-    <!-- CATÁLOGO -->
-    <section id="view-catalogo" class="hidden space-y-6">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-2xl space-y-4">
         <div class="flex flex-col md:flex-row gap-3.5 items-center justify-between">
           <div class="relative w-full md:w-96">
@@ -99,7 +105,7 @@
             <button onclick="setSpecialFilter('ok', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-emerald-300 hover:bg-slate-700 border border-emerald-500/30 transition-all"><i class="fa-solid fa-circle-check mr-1"></i> Estudiados</button>
             <button onclick="setSpecialFilter('fne', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-purple-300 hover:bg-purple-950/60 border border-purple-500/30 transition-all"><i class="fa-solid fa-ribbon mr-1"></i> Control FNE</button>
             <button onclick="setSpecialFilter('frio', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-cyan-300 hover:bg-cyan-950/60 border border-cyan-500/30 transition-all"><i class="fa-solid fa-snowflake mr-1"></i> Cadena de Frío</button>
-            <button onclick="setSpecialFilter('cucuta', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-amber-300 hover:bg-amber-950/60 border border-amber-500/30 transition-all"><i class="fa-solid fa-temperature-high mr-1"></i> Alerta Cúcuta</button>
+            <button onclick="setSpecialFilter('cucuta', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-amber-300 hover:bg-amber-950/60 border border-amber-500/30 transition-all"><i class="fa-solid fa-temperature-high mr-1"></i> Clima Cálido (IVb)</button>
             <button onclick="setSpecialFilter('atb', event)" class="filter-pill px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-rose-300 hover:bg-rose-950/60 border border-rose-500/30 transition-all"><i class="fa-solid fa-bacteria mr-1"></i> Antibióticos</button>
           </div>
         </div>
@@ -131,6 +137,11 @@
         <p class="text-slate-300 font-bold text-base">No se encontraron medicamentos.</p>
         <p class="text-xs text-slate-500 mt-1">Cambia la búsqueda o restablece los filtros.</p>
       </div>
+    </section>
+
+    <!-- SIMULADOR (AHORA PESTAÑA SECUNDARIA) -->
+    <section id="view-simulador" class="hidden space-y-6">
+      <div id="quizArea" class="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-3xl shadow-xl"></div>
     </section>
 
     <!-- FLASHCARDS -->
@@ -206,9 +217,9 @@
         <div class="flex items-start gap-4">
           <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl flex-shrink-0 border border-amber-500/40"><i class="fa-solid fa-temperature-high"></i></div>
           <div>
-            <h3 class="text-base font-bold text-white">Zona climática IVb (OMS): Cúcuta y área metropolitana</h3>
+            <h3 class="text-base font-bold text-white">Zona climática IVb (OMS): Clima cálido y húmedo</h3>
             <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-              Cúcuta suele superar los <strong>30 °C</strong> con humedad alta. Los medicamentos que indican «almacenar a menos de 30 °C» necesitan climatización continua. Las suspensiones reconstituidas de betalactámicos y los productos termolábiles (insulinas) van refrigerados entre <strong>2 °C y 8 °C</strong>. Revisa siempre el rótulo y la normativa vigente de tu curso (Resolución 1403 de 2007).
+              En zonas con temperaturas superiores a los <strong>30 °C</strong> y alta humedad relativa, los medicamentos que indican «almacenar a menos de 30 °C» requieren climatización continua. Las suspensiones reconstituidas de betalactámicos y los productos termolábiles (insulinas) van refrigerados entre <strong>2 °C y 8 °C</strong>. Revisa siempre el rótulo y las buenas prácticas de almacenamiento.
             </p>
           </div>
         </div>
@@ -247,8 +258,8 @@
 
   <!-- NAV MÓVIL -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex justify-around py-2.5 z-40 text-[10px] font-semibold">
-    <button onclick="switchTab('simulador')" id="m-tab-simulador" class="flex flex-col items-center text-emerald-400"><i class="fa-solid fa-stethoscope text-lg mb-0.5"></i><span>Prueba</span></button>
-    <button onclick="switchTab('catalogo')" id="m-tab-catalogo" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-book-medical text-lg mb-0.5"></i><span>Catálogo</span></button>
+    <button onclick="switchTab('catalogo')" id="m-tab-catalogo" class="flex flex-col items-center text-emerald-400"><i class="fa-solid fa-book-medical text-lg mb-0.5"></i><span>Catálogo</span></button>
+    <button onclick="switchTab('simulador')" id="m-tab-simulador" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-stethoscope text-lg mb-0.5"></i><span>Prueba</span></button>
     <button onclick="switchTab('flashcards')" id="m-tab-flashcards" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-layer-group text-lg mb-0.5"></i><span>Tarjetas</span></button>
     <button onclick="switchTab('conceptos')" id="m-tab-conceptos" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-spell-check text-lg mb-0.5"></i><span>Conceptos</span></button>
     <button onclick="switchTab('protocolos')" id="m-tab-protocolos" class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-clipboard-check text-lg mb-0.5"></i><span>Normas</span></button>
@@ -1632,6 +1643,7 @@ window.addEventListener('DOMContentLoaded', () => {
   updateFlashcardView();
   renderConcepts();
   loadNotes();
+  switchTab('catalogo'); // Apertura predeterminada en el Catálogo
 });
 </script>
 </body>
