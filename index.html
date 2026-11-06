@@ -1132,6 +1132,20 @@ function renderQuestion() {
     </div>`;
 }
 
+function chooseOption(i) {
+  if (!TEST || !TEST.qs[TEST.idx]) return;
+  TEST.qs[TEST.idx].chosen = i;
+  renderQuestion();
+}
+
+function goTo(idx) {
+  if (!TEST) return;
+  if (idx >= 0 && idx < TEST.qs.length) {
+    TEST.idx = idx;
+    renderQuestion();
+  }
+}
+
 function finishTest() {
   const blank = TEST.qs.filter(q => q.chosen === null).length;
   const msg = blank > 0

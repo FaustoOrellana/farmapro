@@ -1,8 +1,9 @@
-const CACHE_NAME = 'farmasena-v4';
+const CACHE_NAME = 'farmasena-v5';
 
 const ASSETS = [
   './',
   './index.html',
+  './privacy.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -38,23 +39,34 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
 
+  // Para navegación (páginas HTML), buscar primero en red para tener siempre la última versión
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.ok) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('./index.html') || caches.match('./'))
+    );
+    return;
+  }
+
+  // Para el resto de recursos (iconos, CSS, fuentes), usar caché primero con actualización de fondo
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then(cachedResponse => {
-      const fetchPromise = fetch(e.request).then(networkResponse => {
-        if (networkResponse && (networkResponse.ok || networkResponse.type === 'opaque')) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(e.request, responseClone);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        if (cachedResponse) return cachedResponse;
-        if (e.request.mode === 'navigate') {
-          return caches.match('./index.html') || caches.match('./');
-        }
-        return undefined;
-      });
+      const fetchPromise = fetch(e.request)
+        .then(networkResponse => {
+          if (networkResponse && (networkResponse.ok || networkResponse.type === 'opaque')) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(() => undefined);
 
       return cachedResponse || fetchPromise;
     })
