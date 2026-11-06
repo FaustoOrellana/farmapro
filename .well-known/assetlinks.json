@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.faustoorellana.twa",
+        "sha256_cert_fingerprints": ["59:47:43:2E:CB:3B:00:AE:7A:EF:AB:6A:5B:1D:2D:28:B2:AE:D9:36:9E:87:8E:52:92:61:FE:4E:D4:6B:AA:26"]
+      }
+    }]
