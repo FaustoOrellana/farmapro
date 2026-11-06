@@ -1,24 +1,62 @@
-const CACHE = 'farmasena-v3';
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png',
+const CACHE_NAME = 'farmasena-v4';
+
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icon-192.png',
+  './icon-512.png',
   'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'];
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => Promise.all(CORE.map(u =>
-    c.add(new Request(u, u.startsWith('http') ? { mode: 'no-cors' } : {})).catch(() => {})))).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(async cache => {
+      for (const url of ASSETS) {
+        try {
+          const req = new Request(url, url.startsWith('http') ? { mode: 'no-cors' } : {});
+          await cache.add(req);
+        } catch (err) {
+          console.warn('No se pudo cachear el recurso:', url, err);
+        }
+      }
+    }).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => {
-    const net = fetch(e.request).then(r => {
-      if (r && (r.ok || r.type === 'opaque')) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
-      return r;
-    }).catch(() => hit || (e.request.mode === 'navigate' ? caches.match('./index.html') : undefined));
-    return hit || net;
-  }));
+
+  e.respondWith(
+    caches.match(e.request, { ignoreSearch: true }).then(cachedResponse => {
+      const fetchPromise = fetch(e.request).then(networkResponse => {
+        if (networkResponse && (networkResponse.ok || networkResponse.type === 'opaque')) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(e.request, responseClone);
+          });
+        }
+        return networkResponse;
+      }).catch(() => {
+        if (cachedResponse) return cachedResponse;
+        if (e.request.mode === 'navigate') {
+          return caches.match('./index.html') || caches.match('./');
+        }
+        return undefined;
+      });
+
+      return cachedResponse || fetchPromise;
+    })
+  );
 });
